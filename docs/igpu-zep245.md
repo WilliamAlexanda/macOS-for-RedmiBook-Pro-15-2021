@@ -64,7 +64,7 @@ sudo mv -f /Library/KernelCollections/AuxiliaryKernelExtensions.kc.new /Library/
 | Kernel → Add | **关闭 WhateverGreen**；**在 Lilu 后面开启 AMFIPass.kext** |
 | Kernel → Block | `com.apple.iokit.IONDRVSupport`，Strategy `Exclude`（让驱动的帧缓冲成为 0 号显示器） |
 | DeviceProperties → `PciRoot(0x0)/Pci(0x2,0x0)` | `AAPL,ig-platform-id` = `0000499A`，`device-id` = `499A0000`，`AAPL,slot-name` = `built-in` |
-| UEFI → Output → Resolution | `Max`（原生 3200×2000，交给 i915 接管） |
+| UEFI → Output → Resolution | **`Max`**（原生 3200×2000，交给 i915 接管）。i915 会沿用 OpenCore 开机时设好的分辨率；基础配置里是 `1920x1200`，不改的话加速后屏幕就只有 1920×1200 |
 | boot-args（追加） | `nmxintel=1 nmxaccel=1 -nmintelfboff nmxcopyfwd=1 nmxmodern=1 nmxintelfb=1 -nmxnosnap amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 nmxws=1 nmxautoarm=1`（同时去掉 `-igfxvesa`） |
 
 建议**分两步测试**：先不加 `nmxws=1 nmxautoarm=1`（阶段 A：只让 i915 接管屏幕），确认屏幕正常，再加上它们（阶段 B：开启加速桌面）。
@@ -81,6 +81,19 @@ sudo mv -f /Library/KernelCollections/AuxiliaryKernelExtensions.kc.new /Library/
 - 或者把 EFI 里的配置换回基础 `config.plist`。没有 `nmxintel=1` 时，NMXGPU 会主动放弃接管显卡。
 - 加速失败一次后，辅助程序会上锁，下次开机不再开启加速；清除保护锁：`sudo bash "$M" repair`。
 - 完全卸载：删除 `/Library/Extensions/{NMXGPU,NMXAccel,NVRMAGDC}.kext`、`/Library/GPUBundles/{NVMTLDriver.bundle,nvmtl}`，运行 `install-autoarm.sh --remove`，然后重建 AuxKC。
+
+### 5.1 BIOS `RMATG5B0P0F0F`：第一次加载卡死后驱动被停用
+
+另一位同型号用户（Sequoia 15.8.1，BIOS `RMATG5B0P0F0F`）遇到的情况：
+- 驱动第一次加载卡在 `vmap: cache level set`，没有任何提示。
+- **下次开机**驱动发现上次卡住了，于是不再接管显卡，屏幕停留在固件画面。看起来像「系统能用，但没有加速」。
+- 这时可以查卡在哪一步：`nvram nullmoth-hang-step` 和 `nvram nullmoth-last-step`。
+
+**解决办法**：
+1. 先清除保护锁：`sudo bash "$M" repair`。
+2. 在 boot-args 里加上 **`nmxgtawake=2`**，让 GPU 不进入 RC6 节能状态。
+
+加上之后他那台机器能正常完成加载（`222 bridge: deferred mode set committed`），加速也正常。BIOS `RMATG5B0P0D0D` 不需要加这个参数。
 
 ## 6. 排查记录（这些坑的来龙去脉）
 
@@ -163,7 +176,7 @@ Use [`EFI/OC/config-igpu-accel.plist`](../EFI/OC/config-igpu-accel.plist) (add y
 | Kernel → Add | **WhateverGreen off**; **AMFIPass.kext on, right after Lilu** |
 | Kernel → Block | `com.apple.iokit.IONDRVSupport`, Strategy `Exclude` (the driver's framebuffer must be display 0) |
 | DeviceProperties → `PciRoot(0x0)/Pci(0x2,0x0)` | `AAPL,ig-platform-id` = `0000499A`, `device-id` = `499A0000`, `AAPL,slot-name` = `built-in` |
-| UEFI → Output → Resolution | `Max` (native 3200x2000, which i915 takes over) |
+| UEFI → Output → Resolution | **`Max`** (native 3200x2000, which i915 takes over). i915 keeps the mode the OpenCore GOP set at boot; the base config uses `1920x1200`, and the accelerated screen then stays at 1920x1200 |
 | boot-args (append) | `nmxintel=1 nmxaccel=1 -nmintelfboff nmxcopyfwd=1 nmxmodern=1 nmxintelfb=1 -nmxnosnap amfi_get_out_of_my_way=0x1 amfi=0x80 ipc_control_port_options=0 nmxws=1 nmxautoarm=1` (and drop `-igfxvesa`) |
 
 Test in two stages: first without `nmxws=1 nmxautoarm=1` (stage A: i915 drives the panel only), then with them (stage B: accelerated desktop).
@@ -180,6 +193,19 @@ Test in two stages: first without `nmxws=1 nmxautoarm=1` (stage A: i915 drives t
 - Or put the base `config.plist` back. Without `nmxintel=1`, NMXGPU declines the GPU.
 - After a failed arm, the helper locks acceleration for the next boot; clear the lock with `sudo bash "$M" repair`.
 - Full removal: delete `/Library/Extensions/{NMXGPU,NMXAccel,NVRMAGDC}.kext` and `/Library/GPUBundles/{NVMTLDriver.bundle,nvmtl}`, run `install-autoarm.sh --remove`, then rebuild the AuxKC.
+
+#### 5.1 BIOS `RMATG5B0P0F0F`: first attach hangs, then the driver parks itself
+
+Seen by another owner of this model (Sequoia 15.8.1, BIOS `RMATG5B0P0F0F`):
+- The first attach stops silently at `vmap: cache level set`.
+- On the **next** boot the driver sees that the last attach never returned and leaves the GPU alone. The screen stays on the firmware framebuffer, which looks like "it works, but no acceleration".
+- To see where it stopped: `nvram nullmoth-hang-step` and `nvram nullmoth-last-step`.
+
+**Fix**:
+1. Clear the locks with `sudo bash "$M" repair`.
+2. Add **`nmxgtawake=2`** to boot-args, which keeps the GPU out of RC6.
+
+With that, the same config attaches cleanly (`222 bridge: deferred mode set committed`) and acceleration works. BIOS `RMATG5B0P0D0D` does not need it.
 
 ### 6. Debugging notes
 
