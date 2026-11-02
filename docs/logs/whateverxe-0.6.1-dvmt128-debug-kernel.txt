@@ -1,0 +1,123 @@
+# WhateverXe 0.6.1 DEBUG + Lilu 1.7.2 DEBUG, DVMT 128MB, RedmiBook Pro 15 2021 (9A49 rev 01), macOS 26.7.1 25G241
+# boot-args: -allow3d -disablegfxfirmware -wexdbg -liludbg liludump=120 -wex-display-trace IGLogLevel=4 (+ -v keepsyms=1 debug=0x100 alcid=38)
+# Filtered: WhateverXe lines from the Lilu log dump
+WhateverXe      init: @ (DBG) WhateverXe bootstrap DBG-061-2026-10-27
+WhateverXe      igfx: @ Xe display bootstrap physical=9a498086 FB-only=0
+WhateverXe     iokit: @ (DBG) getOSData framebuffer-patch-enable was not found
+WhateverXe      igfx: @ TGL donor path enabled for PCI 8086:9a49, platform 9A490000
+WhateverXe       wex: @ GPU Data access ready=1
+AMFIPass  amfipass: @ solved verbose_logging
+WhateverXe      igfx: @ TGL accelerator start route=1
+WhateverXe      igfx: @ TGL accel stage=1 done=0 result=1 detail=9a498086
+WhateverXe      igfx: @ TGL accel stage=1 done=1 result=ffffff96a80e4000 detail=9a498086
+WhateverXe      igfx: @ TGL framebuffer start entered
+WhateverXe      igfx: @ TGL port probe ddi=0 mode=1
+WhateverXe      igfx: @ TGL330 resources enter ddi=0 stream=0
+WhateverXe      igfx: @ TGL330 resources native-enter ddi=0 adopt=0
+WhateverXe      igfx: @ TGL330 resources native-return ddi=0 result=1
+WhateverXe      igfx: @ TGL framebuffer start returned 1
+WhateverXe      igfx: @ TGL accel stage=2 done=0 result=0 detail=ffffff96a6369540
+WhateverXe      igfx: @ TGL accelerator start entered
+WhateverXe      igfx: @ TGL accel stage=3 done=0 result=0 detail=ffffff7f9a34eefd
+WhateverXe      igfx: @ TGL accel stage=3 done=1 result=0 detail=0
+WhateverXe      igfx: @ TGL accel stage=4 done=0 result=0 detail=0
+WhateverXe      igfx: @ TGL accel stage=4 done=1 result=1 detail=0
+WhateverXe      igfx: @ TGL accel stage=5 done=0 result=0 detail=0
+WhateverXe      igfx: @ TGL accel stage=5 done=1 result=1 detail=0
+WhateverXe      igfx: @ TGL accel stage=6 done=0 result=0 detail=0
+WhateverXe      igfx: @ TGL accel stage=6 done=1 result=1 detail=0
+WhateverXe      igfx: @ TGL accel stage=3 done=0 result=1 detail=ffffff7f9a34f734
+WhateverXe      igfx: @ TGL accel stage=3 done=1 result=1 detail=0
+WhateverXe      igfx: @ TGL accel stage=2 done=1 result=1 detail=ffffff96a6369540
+WhateverXe      igfx: @ TGL accelerator start returned 1
+WhateverXe      igfx: @ TGL accel stage=6 done=0 result=0 detail=0
+WhateverXe      igfx: @ TGL accel stage=6 done=1 result=1 detail=0
+
+# Filtered: kernel log lines from the Apple TGL drivers / TGLCompat (repeated 'Unsupported DDI' collapsed)
+2026-11-02 13:54:25.352945 (AppleIntelTGLCompat) AppleIntelTGLCompat: revision 0.5.0 started, physical-owner/binding selection
+2026-11-02 13:55:10.587443 (AppleIntelTGLGraphics) [IGPU] virtual IOService *IntelAccelerator::probe(IOService *, SInt32 *): Found device with ID 0x9a498086, revision 0x1, PCH id 0x0, PCH rev 0x0 at PCI 0:2:0
+2026-11-02 13:55:10.587454 (AppleIntelTGLGraphics) [IGPU] virtual IOService *IntelAccelerator::probe(IOService *, SInt32 *): Found device with ID 0x9a498086, revision 0x1, PCH id 0x0, PCH rev 0x0 at PCI 0:2:0
+2026-11-02 13:55:10.587556 (AppleIntelTGLGraphicsFramebuffer) [IGFB][INFO ][DISPLAY  ] Starting FB driver
+2026-11-02 13:55:10.588190 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] Unsupported CD clock decimal frequency 0x28b
+2026-11-02 13:55:10.588194 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] Wrong CD clock frequency 0x0 set by EFI
+2026-11-02 13:55:10.588435 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][POWER_WELL] EFI should not enable AUX0 power well - overriding
+2026-11-02 13:55:10.588452 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][POWER_WELL] EFI should not enable PG4 power well - overriding
+2026-11-02 13:55:10.592345 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][BRINGUP  ] Remove if not needed
+2026-11-02 13:55:10.623433 (AppleIntelTGLGraphics) [IGPU] Detecting Pre-Si/Si Mode ... [Si]
+2026-11-02 13:55:10.623436 (AppleIntelTGLGraphics) [IGPU] Detecting Pre-Si/Si Mode ... [Si]
+2026-11-02 13:55:10.917494 (AppleIntelTGLGraphics) [IGPU] HWCAPS - GPU Sku: 2
+2026-11-02 13:55:10.917515 (AppleIntelTGLGraphics) [IGPU] HWCAPS - GPU Sku: 2
+2026-11-02 13:55:10.917521 (AppleIntelTGLGraphics) [IGPU] HWCAPS - VEDBOXEnableFuses:0x10005  VEBox units enabled:1   VDBox units enabled:2
+2026-11-02 13:55:10.917528 (AppleIntelTGLGraphics) [IGPU] HWCAPS - VEDBOXEnableFuses:0x10005  VEBox units enabled:1   VDBox units enabled:2
+2026-11-02 13:55:10.917535 (AppleIntelTGLGraphics) [IGPU] HWCAPS - NumSlices:1      SliceCountFuse:0x1
+2026-11-02 13:55:10.917544 (AppleIntelTGLGraphics) [IGPU] HWCAPS - NumSlices:1      SliceCountFuse:0x1
+2026-11-02 13:55:10.917549 (AppleIntelTGLGraphics) [IGPU] HWCAPS - NumSubSlices:10   DualSubSliceCountFuse:0x1f
+2026-11-02 13:55:10.917555 (AppleIntelTGLGraphics) [IGPU] HWCAPS - NumSubSlices:10   DualSubSliceCountFuse:0x1f
+2026-11-02 13:55:10.917561 (AppleIntelTGLGraphics) [IGPU] HWCAPS - MaxEUPerSubSlice:8   EUDisableFuses:0x0  ExecutionUnitCount:80
+2026-11-02 13:55:10.917564 (AppleIntelTGLGraphics) [IGPU] HWCAPS - MaxEUPerSubSlice:8   EUDisableFuses:0x0  ExecutionUnitCount:80
+2026-11-02 13:55:10.917565 (AppleIntelTGLGraphics) [IGPU] HWCAPS - fMaxFrequencyInMhz:1000   fMinFrequencyInMhz:450   cap.Value:589844
+2026-11-02 13:55:10.917568 (AppleIntelTGLGraphics) [IGPU] HWCAPS - fMaxFrequencyInMhz:1000   fMinFrequencyInMhz:450   cap.Value:589844
+2026-11-02 13:55:10.917570 (AppleIntelTGLGraphics) [IGPU] HWCAPS - GPU Sku: TGL GT2 LP
+2026-11-02 13:55:10.917571 (AppleIntelTGLGraphics) [IGPU] HWCAPS - GPU Sku: TGL GT2 LP
+2026-11-02 13:55:10.917572 (AppleIntelTGLGraphics) [IGPU] HWCAPS - L3BankCount: 8
+2026-11-02 13:55:10.917573 (AppleIntelTGLGraphics) [IGPU] HWCAPS - L3BankCount: 8
+2026-11-02 13:55:10.918202 (AppleIntelTGLGraphics) [IGPU] Ring Size: 32 KB
+2026-11-02 13:55:10.918221 (AppleIntelTGLGraphics) [IGPU] Ring Size: 32 KB
+2026-11-02 13:55:10.918239 (AppleIntelTGLGraphics) [IGPU] Graphics Scheduler Preemption Enabled!
+2026-11-02 13:55:10.918246 (AppleIntelTGLGraphics) [IGPU] Graphics Scheduler Preemption Enabled!
+2026-11-02 13:55:10.918251 (AppleIntelTGLGraphics) [IGPU] Setting preemptionDelayIntervalUS to 160 microseconds
+2026-11-02 13:55:10.918257 (AppleIntelTGLGraphics) [IGPU] Setting preemptionDelayIntervalUS to 160 microseconds
+2026-11-02 13:55:10.918266 (AppleIntelTGLGraphics) [IGPU] Setting preemptionTimerIntervalUS to 2000 microseconds
+2026-11-02 13:55:10.918274 (AppleIntelTGLGraphics) [IGPU] Setting preemptionTimerIntervalUS to 2000 microseconds
+2026-11-02 13:55:10.918279 (AppleIntelTGLGraphics) [IGPU] Will fallback to host-side scheduling if graphics firmware fails to load
+2026-11-02 13:55:10.918284 (AppleIntelTGLGraphics) [IGPU] Will fallback to host-side scheduling if graphics firmware fails to load
+2026-11-02 13:55:10.918286 (AppleIntelTGLGraphics) [IGPU] Scheduler Tail Coalescing Enabled.
+2026-11-02 13:55:10.918287 (AppleIntelTGLGraphics) [IGPU] Scheduler Tail Coalescing Enabled.
+2026-11-02 13:55:10.918288 (AppleIntelTGLGraphics) [IGPU] Scheduler Page Fault Handling Enabled.
+2026-11-02 13:55:10.918292 (AppleIntelTGLGraphics) [IGPU] Scheduler Page Fault Handling Enabled.
+2026-11-02 13:55:10.918297 (AppleIntelTGLGraphics) [IGPU] Scheduler Single Channel Index Disabled
+2026-11-02 13:55:10.918302 (AppleIntelTGLGraphics) [IGPU] Scheduler Single Channel Index Disabled
+2026-11-02 13:55:10.918307 (AppleIntelTGLGraphics) [IGPU] Scheduler Channel Wait For Complete Disabled
+2026-11-02 13:55:10.918309 (AppleIntelTGLGraphics) [IGPU] Scheduler Channel Wait For Complete Disabled
+2026-11-02 13:55:10.918310 (AppleIntelTGLGraphics) [IGPU] Scheduler: Process CSB using HWS.
+2026-11-02 13:55:10.918312 (AppleIntelTGLGraphics) [IGPU] Scheduler: Process CSB using HWS.
+2026-11-02 13:55:10.918313 (AppleIntelTGLGraphics) [IGPU] Scheduler: PM notify enabled
+2026-11-02 13:55:10.918315 (AppleIntelTGLGraphics) [IGPU] Scheduler: PM notify enabled
+2026-11-02 13:55:10.918322 (AppleIntelTGLGraphics) [IGPU] Graphics firmware disabled via NVRAM
+2026-11-02 13:55:10.918324 (AppleIntelTGLGraphics) [IGPU] Graphics firmware disabled via NVRAM
+2026-11-02 13:55:10.918325 (AppleIntelTGLGraphics) [IGPU] Selected Host Preemptive Scheduler
+2026-11-02 13:55:10.918327 (AppleIntelTGLGraphics) [IGPU] Selected Host Preemptive Scheduler
+2026-11-02 13:55:10.918329 (AppleIntelTGLGraphics) [IGPU] Multi-Context (Compute Command Streamer) Enabled.
+2026-11-02 13:55:10.918331 (AppleIntelTGLGraphics) [IGPU] Multi-Context (Compute Command Streamer) Enabled.
+2026-11-02 13:55:10.955405 (AppleIntelTGLGraphics) [IGPU] Detecting Emulator Mode ... [False]
+2026-11-02 13:55:10.955425 (AppleIntelTGLGraphics) [IGPU] Detecting Emulator Mode ... [False]
+2026-11-02 13:55:10.955437 (AppleIntelTGLGraphics) [IGPU] Scheduler: Multiple channel indexes per command streamer
+2026-11-02 13:55:10.955447 (AppleIntelTGLGraphics) [IGPU] Scheduler: Multiple channel indexes per command streamer
+2026-11-02 13:55:10.955453 (AppleIntelTGLGraphics) [IGPU] Scheduler: Process CSB using HWS.
+2026-11-02 13:55:10.955461 (AppleIntelTGLGraphics) [IGPU] Scheduler: Process CSB using HWS.
+2026-11-02 13:55:10.955467 (AppleIntelTGLGraphics) [IGPU] Scheduler: PM notify enabled
+2026-11-02 13:55:10.955474 (AppleIntelTGLGraphics) [IGPU] Scheduler: PM notify enabled
+2026-11-02 13:55:10.955476 (AppleIntelTGLGraphics) [IGPU] Graphics Address: PPGTT, Separate Address Space
+2026-11-02 13:55:10.955478 (AppleIntelTGLGraphics) [IGPU] Graphics Address: PPGTT, Separate Address Space
+2026-11-02 13:55:10.955479 (AppleIntelTGLGraphics) [IGPU] MultiForceWake Enabled: Using 3D Driver
+2026-11-02 13:55:10.955481 (AppleIntelTGLGraphics) [IGPU] MultiForceWake Enabled: Using 3D Driver
+2026-11-02 13:55:10.955482 (AppleIntelTGLGraphics) [IGPU] POSH Enabled
+2026-11-02 13:55:10.955483 (AppleIntelTGLGraphics) [IGPU] POSH Enabled
+2026-11-02 13:55:10.955484 (AppleIntelTGLGraphics) [IGPU] Render Compression Enabled, mode = 128
+2026-11-02 13:55:10.955486 (AppleIntelTGLGraphics) [IGPU] Render Compression Enabled, mode = 128
+2026-11-02 13:55:10.955487 (AppleIntelTGLGraphics) [IGPU] Render Compression for IOSurface is Enabled.
+2026-11-02 13:55:10.955490 (AppleIntelTGLGraphics) [IGPU] Render Compression for IOSurface is Enabled.
+2026-11-02 13:55:10.960298 (AppleIntelTGLGraphics) [IGPU] Scheduler Throttle Cap = 100ms.
+2026-11-02 13:55:10.960306 (AppleIntelTGLGraphics) [IGPU] Scheduler Throttle Cap = 100ms.
+2026-11-02 13:55:10.963580 (AppleIntelTGLGraphics) [IGPU] Graphics accelerator is using scheduler: Host Preemptive
+2026-11-02 13:55:10.963596 (AppleIntelTGLGraphics) [IGPU] Graphics accelerator is using scheduler: Host Preemptive
+2026-11-02 13:55:27.635745 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][PORT     ] Unsupported DDI
+2026-11-02 13:55:27.660734 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][BRINGUP  ] Move most member variables initialization to init method (including start)
+2026-11-02 13:55:27.667319 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][POWER    ]  updateSliceConfig Requesting Invalid Slice Count
+2026-11-02 13:55:27.667321 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][POWER    ]  updateSliceConfig Requesting Invalid Slice Count
+2026-11-02 13:55:27.669033 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][BRINGUP  ] Move most member variables initialization to init method (including start)
+2026-11-02 13:55:27.669036 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][POWER    ]  updateSliceConfig Requesting Invalid Slice Count
+2026-11-02 13:55:27.669037 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][POWER    ]  updateSliceConfig Requesting Invalid Slice Count
+2026-11-02 13:55:27.669534 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][BRINGUP  ] Move most member variables initialization to init method (including start)
+2026-11-02 13:55:27.669536 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][POWER    ]  updateSliceConfig Requesting Invalid Slice Count
+2026-11-02 13:55:27.669537 (AppleIntelTGLGraphicsFramebuffer) [IGFB][WARN ][POWER    ]  updateSliceConfig Requesting Invalid Slice Count

@@ -24,7 +24,7 @@
 | 指纹 | Goodix 27c6:581a | ❌ |
 | 睡眠 | — | ❌ 不建议使用 |
 
-BIOS：Insyde H2O `RMATG5B0P0D0D`，DVMT 固定 60MB（GMS 0xFE），BIOS 里看不到这个选项。i915 移植驱动的显存从系统内存分配，所以不受这个限制。
+BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BIOS 里看不到这个选项，但**可以在 macOS 里改成 128MB**，见 [docs/dvmt-insyde.md](docs/dvmt-insyde.md)。i915 移植驱动的显存从系统内存分配，不改也能用；苹果原版驱动（WhateverXe）则必须改。
 
 ## 目录
 
@@ -39,7 +39,8 @@ BIOS：Insyde H2O `RMATG5B0P0D0D`，DVMT 固定 60MB（GMS 0xFE），BIOS 里看
 | `scripts/patch_kexts.py` | 给 VoodooI2C / VoodooGPIO 加 Tiger Lake 支持 |
 | `scripts/deploy-redmi.sh`、`scripts/try-alcid.sh` | 通过网线远程部署 EFI、切换 AppleALC layout |
 | `docs/igpu-zep245.md` | **核显加速教程**（中英双语） |
-| `docs/igpu-whateverxe.md` | 之前用 WhateverXe 失败的调查记录 |
+| `docs/dvmt-insyde.md`、`scripts/set-dvmt.sh`、`scripts/bios/` | **修改隐藏的 DVMT 显存**（60MB → 128MB），以及解包小米 BIOS、查找设置项位置的工具 |
+| `docs/igpu-whateverxe.md` | WhateverXe 调查记录：60MB 时开加速就冻结；改成 128MB 后不再冻结，但屏幕全黑，已报告给作者 |
 | `windows-tools/collect-hwinfo.ps1` | 在 Windows 下收集硬件信息 |
 
 ## 关键配置要点（踩过的坑）
@@ -94,7 +95,7 @@ A complete record of running **macOS Tahoe 26.7.1 (25G241)** with OpenCore on th
 | Fingerprint | Goodix 27c6:581a | ❌ |
 | Sleep | — | ❌ not recommended |
 
-BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT is fixed at 60 MB (GMS 0xFE) and hidden in setup. The i915 port allocates GPU memory from system RAM, so this limit does not apply to it.
+BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hidden in setup, but it **can be set to 128 MB from macOS**: see [docs/dvmt-insyde.md](docs/dvmt-insyde.md). The i915 port allocates GPU memory from system RAM and works without it; Apple's driver (WhateverXe) needs it.
 
 ### Layout
 
@@ -109,7 +110,8 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT is fixed at 60 MB (GMS 0xFE) and hidden i
 | `scripts/patch_kexts.py` | Adds Tiger Lake support to VoodooI2C / VoodooGPIO |
 | `scripts/deploy-redmi.sh`, `scripts/try-alcid.sh` | Remote EFI deploy and AppleALC layout testing over Ethernet |
 | `docs/igpu-zep245.md` | **iGPU acceleration guide** (English / Chinese) |
-| `docs/igpu-whateverxe.md` | Earlier failed attempt with WhateverXe |
+| `docs/dvmt-insyde.md`, `scripts/set-dvmt.sh`, `scripts/bios/` | **Change the hidden DVMT setting** (60 MB → 128 MB), plus tools to unpack the Xiaomi BIOS and locate setup options |
+| `docs/igpu-whateverxe.md` | WhateverXe investigation: freezes at 60 MB; at 128 MB the freeze is gone but the screen stays black (reported upstream) |
 | `windows-tools/collect-hwinfo.ps1` | Hardware inventory from Windows |
 
 ### Key fixes

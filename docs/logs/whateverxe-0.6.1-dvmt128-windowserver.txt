@@ -1,0 +1,65 @@
+# WindowServer (CoreDisplay/SkyLight display-related lines), same boot. 'No plane indices' and 'Attempting to get capabilities when none exist' repeat every frame (~90/s) after 13:55:44 and are collapsed here.
+2026-11-02 13:55:26.568554 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Setting offline display 0x00000000 main in CGXConstructVirtualFramebuffer 	
+2026-11-02 13:55:26.569057 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Setting main display 0x00000000 offline 	
+2026-11-02 13:55:26.574714 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Setting offline display 0x41dc9d00 main in CGXMainDisplayDevice 	
+2026-11-02 13:55:27.619927 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Creating FB 1 of 3
+2026-11-02 13:55:37.954273 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: Setting mode 0x80001000 with depth 0x0 on displayID: 0x0 fbRegID: 0x100000549
+2026-11-02 13:55:37.954274 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: IOService:/AppleACPIPlatformExpert/PC00@0/AppleACPIPCI/IGPU@2-51b8-1560-271d6ad132b4e710
+2026-11-02 13:55:37.958253 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: Mode has dimensions 3200x2000
+2026-11-02 13:55:39.177757 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - isBroadwellOrLater_block_invoke: sysctlbyname fail with error status 0x00000000
+2026-11-02 13:55:39.188753 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Attempting to get capabilities from capabilities with no devices
+2026-11-02 13:55:39.188825 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Created FB 1 of 3
+2026-11-02 13:55:39.188925 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Creating FB 2 of 3
+2026-11-02 13:55:39.189909 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: Setting mode 0x0 with depth 0x0 on displayID: 0x0 fbRegID: 0x100000549
+2026-11-02 13:55:39.189910 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: Failed to obtain mode info from IOFBGetDisplayModeInformation()
+2026-11-02 13:55:40.403891 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Created FB 2 of 3
+2026-11-02 13:55:40.403977 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Creating FB 3 of 3
+2026-11-02 13:55:41.622021 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Created FB 3 of 3
+2026-11-02 13:55:41.625298 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Error: No property 'FB_Triage', or property isn't a string.
+2026-11-02 13:55:41.625576 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - GPU: FB: 3 of 3 opened
+2026-11-02 13:55:41.667453 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Setting kIOWSAA to 0x80000013 on 0x9233
+2026-11-02 13:55:41.667511 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Setting kIOWSAA to 0x80000013 on 0xd503
+2026-11-02 13:55:41.667540 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Setting kIOWSAA to 0x80000013 on 0xcc33
+2026-11-02 13:55:41.669106 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Setting offline display 0x00000000 main in AddCGXDisplayDeviceToDeviceList 	
+2026-11-02 13:55:41.694012 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer red gamma scaling factor on port 37427 (e00002ce)
+2026-11-02 13:55:41.694022 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer green gamma scaling factor on port 37427 (e00002ce)
+2026-11-02 13:55:41.694026 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer blue gamma scaling factor on port 37427 (e00002ce)
+2026-11-02 13:55:41.696798 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - isSkylakeOrLater_block_invoke: sysctlbyname fail with error status 0x00000000
+2026-11-02 13:55:41.696804 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - isCannonLakeOrLater_block_invoke: sysctlbyname fail with error status 0x00000000
+2026-11-02 13:55:41.697037 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - get_display_device_info: force8BPC = NO
+2026-11-02 13:55:41.697542 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Display id 0x00000000 -> 0x6e055800
+2026-11-02 13:55:41.697551 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - get_display_device_info: Display 0x6e055800 force8BPC=NO isBDW=YES isSKL=NO isCNL=YES isAcc=YES isMUX=NO isBuiltIn=YES isMobile=YES isSkylakeMacBook=NO
+2026-11-02 13:55:41.697678 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - device_preserves_framebuffer: needs_refresh = NO
+2026-11-02 13:55:41.704895 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer red gamma scaling factor on port 54531 (e00002d7)
+2026-11-02 13:55:41.704897 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer green gamma scaling factor on port 54531 (e00002d7)
+2026-11-02 13:55:41.704897 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer blue gamma scaling factor on port 54531 (e00002d7)
+2026-11-02 13:55:41.705148 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Display id 0x00000000 -> 0x003f003d
+2026-11-02 13:55:41.705158 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - get_display_device_info: Display 0x003f003d force8BPC=NO isBDW=YES isSKL=NO isCNL=YES isAcc=YES isMUX=NO isBuiltIn=NO isMobile=YES isSkylakeMacBook=NO
+2026-11-02 13:55:41.705632 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer red gamma scaling factor on port 52275 (e00002d7)
+2026-11-02 13:55:41.705633 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer green gamma scaling factor on port 52275 (e00002d7)
+2026-11-02 13:55:41.705634 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - GetThermalCompensationAttributes: can't get framebuffer blue gamma scaling factor on port 52275 (e00002d7)
+2026-11-02 13:55:41.705837 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Display id 0x00000000 -> 0x003f003e
+2026-11-02 13:55:41.705843 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - get_display_device_info: Display 0x003f003e force8BPC=NO isBDW=YES isSKL=NO isCNL=YES isAcc=YES isMUX=NO isBuiltIn=NO isMobile=YES isSkylakeMacBook=NO
+2026-11-02 13:55:41.712197 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: Setting mode 0x80001000 with depth 0x0 on displayID: 0x6e055800 fbRegID: 0x100000549
+2026-11-02 13:55:42.948147 (CoreDisplay) CDN - Bootstrap Port: 2563
+2026-11-02 13:55:42.948235 (CoreDisplay) CDN - Local Port: 70915 (com.apple.CoreDisplay.Notification)
+2026-11-02 13:55:42.948646 (IOKit) [com.apple.iohid:default] Connection added: IOHIDEventSystemConnection uuid:55FC31A4-0F70-443E-9102-DF712B1FFC3F pid:201 process:WindowServer type:Rate Controlled entitlements:0x3 caller:SkyLight: _ZN2WS8Displays18CoreDisplayManager10initializeEv + 43 attributes:(null) state:0x0 events:0 mask:0x0 dropped:0 dropStatus:0 droppedMask:0x0 lastDroppedTime:NONE
+2026-11-02 13:55:43.021240 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Reconfiguration started
+2026-11-02 13:55:43.021509 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - CGXDisplaysWillReconfigure: Posting kCGSDisplayWillReconfigure
+2026-11-02 13:55:43.057351 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - IOFBSetDisplayModeAndDepth: Setting mode 0x80001000 with depth 0x1 on displayID: 0x6e055800 fbRegID: 0x100000549
+2026-11-02 13:55:44.269749 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - CGXDisplaysDidReconfigure: Posting kCGSDisplayDidReconfigure
+2026-11-02 13:55:44.270708 (CoreDisplay) [com.apple.CoreDisplay:default] [ERROR] - Reconfiguration finished
+2026-11-02 13:55:44.271179 (CoreDisplay) [com.apple.VirtualDisplay:server] com.apple.VirtualDisplay:0x6000000ddc00
+2026-11-02 13:55:44.271181 (SkyLight) [com.apple.SkyLight:default] Metal compositor activated.
+2026-11-02 13:55:44.271306 (SkyLight) [com.apple.SkyLight:default] BootSet=M
+2026-11-02 13:55:44.331881 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Setting kIOWSAA to 0x11 on 0x9233
+2026-11-02 13:55:44.331986 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Setting kIOWSAA to 0x11 on 0xd503
+2026-11-02 13:55:44.332044 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Setting kIOWSAA to 0x11 on 0xcc33
+2026-11-02 13:55:44.332143 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - Display: 0x6e055800 woke on GPU: Intel
+2026-11-02 13:55:44.332148 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - UpdateWSAAState: Linear brightness after wake: 0.267526
+2026-11-02 13:55:44.332151 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - logGammaTransferInfoForDevice: Gamma values red: 0.000000 ... 0.500481 ... 1.000000
+2026-11-02 13:55:44.332152 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - logGammaTransferInfoForDevice: Gamma values gre: 0.000000 ... 0.500481 ... 1.000000
+2026-11-02 13:55:44.332153 (CoreDisplay) [com.apple.CoreDisplay:default] [WARN] - logGammaTransferInfoForDevice: Gamma values blu: 0.000000 ... 0.500481 ... 1.000000
+# (then, every frame:)
+[ERROR] - Attempting to get capabilities when none exist
+[WARN] - No plane indices
