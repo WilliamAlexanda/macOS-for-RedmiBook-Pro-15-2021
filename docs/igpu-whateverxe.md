@@ -1,5 +1,9 @@
 # Iris Xe acceleration with WhateverXe on RedmiBook Pro 15 2021 — investigation report
 
+> **已被取代 / Superseded**：核显加速已改用 [zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver) 实现，见 [igpu-zep245.md](igpu-zep245.md)。The working route is now the zep245 driver; see [igpu-zep245.md](igpu-zep245.md).
+>
+> **中文摘要**：用 WhateverXe 0.4.0 + 苹果的 Tiger Lake 驱动时，**只开显示（`-wex-noaccel`）能点亮 3200×2000 内屏，一旦启动 GPU 加速引擎整机就冻结**。显存参数、CPU 伪装、SimpleHDA、频率控制、开机分辨率这些因素都已排除。最可能的原因是 BIOS 固定的 60MB DVMT 不够苹果驱动用。另一位同型号用户换成 WhateverXe 0.6.1、在 Sequoia 上测试，结果相同。
+
 Written so it can be forwarded to the WhateverXe author as a bug report.
 
 ## System

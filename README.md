@@ -1,16 +1,18 @@
 # macOS Tahoe on RedmiBook Pro 15 2021 (Intel i5-11300H)
 
-在 **RedmiBook Pro 15 2021（Intel 版，i5-11300H / Iris Xe 9A49）** 上用 OpenCore 安装 **macOS Tahoe 26.7.1 (25G241)** 的完整记录，与 Windows 双系统共存。
+**中文** | [English](#english)
 
-> ⚠️ 黑苹果有风险。本仓库的 `config.plist` 已清空序列号（SystemSerialNumber / MLB / SystemUUID / ROM），使用前请用 GenSMBIOS 或 `macserial -m MacBookPro16,2` 生成你自己的一套。
+在 **RedmiBook Pro 15 2021（Intel 版，i5-11300H / Iris Xe 9A49）** 上用 OpenCore 运行 **macOS Tahoe 26.7.1 (25G241)** 的完整记录，与 Windows 双系统共存。**核显 Metal 加速已跑通**（3200×2000 @ 90Hz）。
 
-## 硬件
+> ⚠️ 黑苹果有风险。仓库里的 `config.plist` / `config-igpu-accel.plist` 都已清空序列号（SystemSerialNumber / MLB / SystemUUID / ROM），使用前请用 GenSMBIOS 或 `macserial -m MacBookPro16,2` 生成你自己的一套。
+
+## 硬件与状态
 
 | 部件 | 型号 | 状态 |
 |---|---|---|
 | CPU | i5-11300H（Tiger Lake-H35，model 0x8C） | ✅ 伪装成 Ice Lake-U（`Cpuid1Data E5060700`） |
-| 核显 | Iris Xe `8086:9A49` | ⚠️ **无加速**（`-igfxvesa`，见下文「核显」） |
-| 屏幕 | 天马 TL156MDMP01，3200×2000，90/60Hz | ✅ 以 1920×1200 GOP 模式运行 |
+| 核显 | Iris Xe `8086:9A49` | ✅ **Metal 加速**：[zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver)（i915 移植），见 [docs/igpu-zep245.md](docs/igpu-zep245.md) |
+| 屏幕 | 天马 TL156MDMP01，3200×2000，90/60Hz | ✅ 加速后原生 3200×2000 @ 90Hz；未加速时用 1920×1200 GOP |
 | 硬盘 | Intel 660p 1TB（SSDPEKNW010T8） | ✅ |
 | 网卡 | Intel AX201 | ✅ AirportItlwm（原生 Wi-Fi 菜单） |
 | 蓝牙 | Intel 8087:0026 | ✅ IntelBluetoothFirmware |
@@ -22,52 +24,115 @@
 | 指纹 | Goodix 27c6:581a | ❌ |
 | 睡眠 | — | ❌ 不建议使用 |
 
-BIOS：Insyde H2O，版本 `RMATG5B0P0D0D`，DVMT 固定 60MB（GMS 0xFE），BIOS 中不可见。
+BIOS：Insyde H2O `RMATG5B0P0D0D`，DVMT 固定 60MB（GMS 0xFE），BIOS 里看不到这个选项。i915 移植驱动的显存从系统内存分配，所以不受这个限制。
 
 ## 目录
 
 | 路径 | 内容 |
 |---|---|
-| `EFI/` | `config.plist` + 本机 SSDT；OpenCore 与各 kext 需按 [EFI/COMPONENTS.md](EFI/COMPONENTS.md) 自行下载 |
-| `acpi/` | SSDTTime 为本机生成的 SSDT 源码 + `patches_OC.plist` |
-| `scripts/make_config.py` | 生成 `config.plist` 的脚本（以 [XPS 13 Plus 项目](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) 的 `config-install.plist` 为底板） |
+| `EFI/OC/config.plist` | **基础配置**：WhateverGreen + `-igfxvesa`，无核显加速，1920×1200。适合安装和救援 |
+| `EFI/OC/config-igpu-accel.plist` | **日常配置**：zep245 驱动 + Metal 加速（需按 [docs/igpu-zep245.md](docs/igpu-zep245.md) 装好驱动） |
+| `EFI/COMPONENTS.md` | OpenCore 与各 kext 的版本和下载地址（二进制文件不在仓库里） |
+| `acpi/` | SSDTTime 为本机生成的 SSDT + `patches_OC.plist` |
+| `scripts/make_config.py` | 生成基础 `config.plist`（底板来自 [XPS 13 Plus 项目](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe)） |
+| `scripts/make_nmx_config.py` | 由基础配置生成核显加速配置 |
 | `scripts/patch_kexts.py` | 给 VoodooI2C / VoodooGPIO 加 Tiger Lake 支持 |
-| `scripts/deploy-redmi.sh` | 通过网线把 EFI 部署到红米内置 ESP（带备份与 md5 校验） |
-| `scripts/try-alcid.sh` | 远程切换 AppleALC layout 并重启测试 |
-| `docs/igpu-whateverxe.md` | 核显加速（WhateverXe）调查报告 |
+| `scripts/deploy-redmi.sh`、`scripts/try-alcid.sh` | 通过网线远程部署 EFI、切换 AppleALC layout |
+| `docs/igpu-zep245.md` | **核显加速教程**（中英双语） |
+| `docs/igpu-whateverxe.md` | 之前用 WhateverXe 失败的调查记录 |
 | `windows-tools/collect-hwinfo.ps1` | 在 Windows 下收集硬件信息 |
-| `tools/` | WhateverXe Graphics 卸载脚本（双击版） |
-
-### 需要自己补的文件
-- OpenCore 与全部 kext 的版本、下载地址见 [EFI/COMPONENTS.md](EFI/COMPONENTS.md)。VoodooI2C 需要打补丁（改好的 Info.plist 在 `EFI/OC/Kexts-patched/`）。
-- 序列号：见顶部提示。
 
 ## 关键配置要点（踩过的坑）
 
-1. **卡在 `EXITBS:START`**：Tiger Lake 必须打开 `Kernel → Quirks → AppleXcpmExtraMsrs`。CPU 伪装用 Ice Lake-U `E5060700 00000000 00000000 00000000` / Mask `FFFFFFFF 00000000 00000000 00000000`，与机型 MacBookPro16,2（Ice Lake）一致。
-2. **开机约 1 秒内核崩溃，`Fault CR2: 0xff654c0f`，调用栈无 kext、`No mapping exists for frame pointer`**：是固件运行时服务访问 SPI Flash 的 MMIO（0xFF000000 段）被 `DevirtualiseMmio` 去映射了。**关闭 `Booter → Quirks → DevirtualiseMmio`**（并清空从 XPS 带来的 `MmioWhitelist`）。
-3. **触摸板**：VoodooI2C 2.9.1（含官方版）没有 Tiger Lake I2C 控制器（`8086:A0E8–A0EB`）的 personality，VoodooGPIO 的 TigerLakeLP 只匹配 `INTC1055` 而本机是 `INT34C5`（Linux 两者共用 TGL-LP 引脚表）。`scripts/patch_kexts.py` 只改 Info.plist 补上这两项。安装阶段保留 `-vi2c-force-polling`。
-   - 若某次开机触摸板消失：DSDT 中 `TPD0._STA` 取决于 BIOS 开机探测写入的 `TPDT`（1=ELAN，2=GXT）。多次强制断电后可能探测失败，**完全关机再开机**即可恢复。
-4. **Wi-Fi**：装好系统后用 `AirportItlwm`（XPS 项目里的 Tahoe 版 2.4.0），不用 `itlwm`。
-5. **声音**：Tahoe 删除了 AppleHDA，AppleALC 单独无效 → 用 **SimpleHDA** 注入（顺序 Lilu → AppleALC → SimpleHDA，MinKernel 25.0.0）。控制器虽处于 SST/DSP 模式（class 0x0401），AppleHDAController 仍能挂上。
-   - **layout**：69 / 99（小米 Pro）把扬声器放在 0x1B，没有声音。用 `alc-verb` 实测本机扬声器在 **0x14**（只连 DAC 0x02），耳机 0x21 → **`alcid=38`**（三星 Galaxy Book TGL）。
-6. **显示**：无加速时只有 GOP 模式可用，没有 HiDPI。本机 GOP 只提供 `3200×2000 / 1920×1200 / 1920×1440 / 1600×1200 / 1280×1024 / 1024×768 / 800×600 / 640×480`（OpenCore DEBUG 日志读出），16:10 里最低就是 **1920×1200**（`UEFI → Output → Resolution`）。无加速时 Tahoe 桌面壁纸显示为白色。
-7. **安装 U 盘**：`createinstallmedia` 必须在「终端」App 里运行（从其他进程以 root 运行会被 TCC 拦截写外置卷）。
-8. **双系统**：OpenCore 放进 Windows 的 100MB ESP（`EFI/OC`，不动 `EFI/Boot` 与 `EFI/Microsoft`），在 Windows 里用 `bcdedit /copy {bootmgr} /d "OpenCore"` → `bcdedit /set {id} path \EFI\OC\OpenCore.efi` → `bcdedit /set {fwbootmgr} displayorder {id} /addfirst` 加启动项。
-
-## 核显
-
-详见 [docs/igpu-whateverxe.md](docs/igpu-whateverxe.md)。结论：用 [WhateverXe 0.4.0](https://github.com/b00t0x/WhateverXe) + WhateverXe-Graphics 0.1.0，**仅显示（`-wex-noaccel`）能点亮 3200×2000 内屏，一旦启动 GPU 加速引擎整机冻结**；排除了显存参数、CPU 伪装、SimpleHDA、频率控制、GOP 分辨率等因素。待尝试：BIOS 隐藏项把 DVMT 调到 96/128MB，或等待作者更新。
+1. **卡在 `EXITBS:START`**：Tiger Lake 必须打开 `Kernel → Quirks → AppleXcpmExtraMsrs`。CPU 伪装成 Ice Lake-U（`E5060700 00000000 00000000 00000000`，Mask `FFFFFFFF 00000000 00000000 00000000`），和机型 MacBookPro16,2 对应。
+2. **开机约 1 秒内核崩溃**（`Fault CR2: 0xff654c0f`，调用栈里没有 kext，`No mapping exists for frame pointer`）：原因是固件运行时服务要访问 SPI Flash 的 MMIO（0xFF000000 段），而 `DevirtualiseMmio` 把这段映射去掉了。**关闭 `Booter → Quirks → DevirtualiseMmio`**，同时清空从 XPS 配置带来的 `MmioWhitelist`。
+3. **触摸板**：VoodooI2C 2.9.1 没有 Tiger Lake I2C 控制器（`8086:A0E8–A0EB`）的匹配项；VoodooGPIO 的 TigerLakeLP 只认 `INTC1055`，而本机是 `INT34C5`。用 `scripts/patch_kexts.py` 补上这两项即可。如果某次开机触摸板消失（`TPD0._STA` 取决于 BIOS 写入的 `TPDT`），**完全关机后再开机**就能恢复。
+4. **Wi-Fi**：装好系统后用 `AirportItlwm`（Tahoe 版 2.4.0）。
+5. **声音**：Tahoe 删除了 AppleHDA，要用 **SimpleHDA** 注入（加载顺序 Lilu → AppleALC → SimpleHDA）。本机扬声器接在 **0x14** 引脚（69 / 99 这两个 layout 用的是 0x1B，所以没声音），选 **`alcid=38`**。
+6. **核显加速**：见 [docs/igpu-zep245.md](docs/igpu-zep245.md)。最容易踩的坑：作者的安装工具**漏装 Mesa 的 Vulkan 驱动**，WindowServer 会报 `Failed to create MetalDevice` 然后反复崩溃；另外**必须开启 AMFIPass 并加上 AMFI 启动参数**。
+7. **安装 U 盘**：`createinstallmedia` 必须在「终端」App 里运行，从其他进程以 root 身份运行也会被 TCC 拦截，写不进外置卷。
+8. **双系统**：把 `EFI/OC` 放进 Windows 的 100MB ESP（不要动 `EFI/Boot` 和 `EFI/Microsoft`），然后在 Windows 里用 `bcdedit /copy {bootmgr} /d "OpenCore"` → `bcdedit /set {id} path \EFI\OC\OpenCore.efi` → `bcdedit /set {fwbootmgr} displayorder {id} /addfirst` 添加启动项。
+9. **救援**：如果加速配置启动出问题，在 OpenCore 菜单里选中 Macintosh HD，按 **Shift + 回车**进入安全模式，或者把 EFI 换回基础 `config.plist`。
 
 ## 安装流程摘要
 
-1. Windows 下运行 `windows-tools/collect-hwinfo.ps1` 与 SSDTTime（P → FakeEC Laptop → USBX → PluginType → RTCAWAC → PNLF(_UID 19) → XOSI），生成 `acpi/` 下文件。
-2. BIOS：关闭 Secure Boot。VT-d 无法关闭，配置里开了 `DisableIoMapper`。
-3. 在 Windows 磁盘管理里压缩出空间，建一个 exFAT 分区（安装时在磁盘工具里只抹这个分区为 APFS）。
-4. `softwareupdate --fetch-full-installer --full-installer-version 26.7.1`（或直接下 InstallAssistant.pkg），`createinstallmedia`，把 `EFI/` 放进 U 盘 ESP。
-5. 安装 → 把 `EFI/OC` 拷进内置 ESP → bcdedit 添加启动项。
-6. 安装后 `config.plist` 已是日常配置（AirportItlwm、SimpleHDA、alcid=38、1920×1200）。
+1. 在 Windows 下运行 `windows-tools/collect-hwinfo.ps1` 和 SSDTTime（依次选 P → FakeEC Laptop → USBX → PluginType → RTCAWAC → PNLF(_UID 19) → XOSI）。
+2. BIOS 里关闭 Secure Boot。VT-d 关不掉，所以配置里开了 `DisableIoMapper`。
+3. 在 Windows 里压缩出一块空间，新建一个 exFAT 分区；安装 macOS 时只把这个分区抹成 APFS。
+4. 用 `softwareupdate --fetch-full-installer --full-installer-version 26.7.1` 下载安装器，再用 `createinstallmedia` 做 U 盘，把 `EFI/` 放进 U 盘的 ESP。
+5. 安装 macOS → 把 `EFI/OC` 拷进内置硬盘的 ESP → 用 bcdedit 添加启动项。
+6. 用基础配置确认声音、Wi-Fi、触摸板都正常后，再按 [docs/igpu-zep245.md](docs/igpu-zep245.md) 开启核显加速。
 
 ## 致谢
 
-OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2（acidanthera）、VoodooI2C、OpenIntelWireless（itlwm / IntelBluetoothFirmware）、laobamac（AirportItlwm-Tahoe、SimpleHDA）、b00t0x（WhateverXe）、JulioNectar（XPS 13 Plus Tahoe 项目，提供配置底板）、corpnewt（SSDTTime）、USBToolBox。
+OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2（acidanthera）、VoodooI2C、OpenIntelWireless、laobamac（AirportItlwm-Tahoe、SimpleHDA）、**zep245 与 NullMoth Systems（Iris Xe i915 驱动）**、dhinakg（AMFIPass）、b00t0x（WhateverXe）、watchthelight（XeGfx）、JulioNectar（XPS 13 Plus Tahoe 项目）、corpnewt（SSDTTime）、USBToolBox。
+
+---
+
+<a id="english"></a>
+
+## English
+
+A complete record of running **macOS Tahoe 26.7.1 (25G241)** with OpenCore on the **RedmiBook Pro 15 2021 (Intel, i5-11300H / Iris Xe 9A49)**, dual-booting with Windows. **Iris Xe Metal acceleration works** (3200x2000 @ 90 Hz).
+
+> ⚠️ Use at your own risk. Serials (SystemSerialNumber / MLB / SystemUUID / ROM) are blanked in `config.plist` and `config-igpu-accel.plist`. Generate your own with GenSMBIOS or `macserial -m MacBookPro16,2`.
+
+### Hardware and status
+
+| Part | Model | Status |
+|---|---|---|
+| CPU | i5-11300H (Tiger Lake-H35, model 0x8C) | ✅ spoofed as Ice Lake-U (`Cpuid1Data E5060700`) |
+| iGPU | Iris Xe `8086:9A49` | ✅ **Metal acceleration** with [zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver) (i915 port), see [docs/igpu-zep245.md](docs/igpu-zep245.md) |
+| Panel | Tianma TL156MDMP01, 3200x2000, 90/60 Hz | ✅ native 3200x2000 @ 90 Hz when accelerated; 1920x1200 GOP otherwise |
+| SSD | Intel 660p 1 TB | ✅ |
+| Wi-Fi / BT | Intel AX201 / 8087:0026 | ✅ AirportItlwm / IntelBluetoothFirmware |
+| Audio | Realtek ALC256 (A0C8 controller in SST/DSP mode) | ✅ speakers / headphones via SimpleHDA + `alcid=38` |
+| Internal mic | DMIC on the Intel SST DSP | ❌ |
+| Touchpad | I2C HID `GXT7863` on I2C1 (A0E9), GPIO `INT34C5` | ✅ VoodooI2C (patched, see below) |
+| Keyboard | PS/2 | ✅ VoodooPS2 |
+| Camera | XiaoMi USB 2.0 Webcam (UVC) | ✅ |
+| Fingerprint | Goodix 27c6:581a | ❌ |
+| Sleep | — | ❌ not recommended |
+
+BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT is fixed at 60 MB (GMS 0xFE) and hidden in setup. The i915 port allocates GPU memory from system RAM, so this limit does not apply to it.
+
+### Layout
+
+| Path | Contents |
+|---|---|
+| `EFI/OC/config.plist` | **Base config**: WhateverGreen + `-igfxvesa`, no acceleration, 1920x1200. For installing and recovery |
+| `EFI/OC/config-igpu-accel.plist` | **Daily config**: zep245 driver + Metal acceleration (install the driver first, see [docs/igpu-zep245.md](docs/igpu-zep245.md)) |
+| `EFI/COMPONENTS.md` | OpenCore / kext versions and download links (binaries are not in this repo) |
+| `acpi/` | SSDTs generated by SSDTTime for this machine + `patches_OC.plist` |
+| `scripts/make_config.py` | Builds the base `config.plist` (template from the [XPS 13 Plus project](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe)) |
+| `scripts/make_nmx_config.py` | Derives the accelerated config from the base config |
+| `scripts/patch_kexts.py` | Adds Tiger Lake support to VoodooI2C / VoodooGPIO |
+| `scripts/deploy-redmi.sh`, `scripts/try-alcid.sh` | Remote EFI deploy and AppleALC layout testing over Ethernet |
+| `docs/igpu-zep245.md` | **iGPU acceleration guide** (English / Chinese) |
+| `docs/igpu-whateverxe.md` | Earlier failed attempt with WhateverXe |
+| `windows-tools/collect-hwinfo.ps1` | Hardware inventory from Windows |
+
+### Key fixes
+
+1. **Hang at `EXITBS:START`**: enable `Kernel → Quirks → AppleXcpmExtraMsrs` (needed on Tiger Lake). CPUID spoof to Ice Lake-U (`E5060700 00000000 00000000 00000000`, mask `FFFFFFFF 00000000 00000000 00000000`), which matches MacBookPro16,2.
+2. **Kernel panic about 1 s after boot** (`Fault CR2: 0xff654c0f`, no kexts in the backtrace): firmware runtime services touch the SPI flash MMIO at 0xFF000000, and `DevirtualiseMmio` unmaps it. **Turn `Booter → Quirks → DevirtualiseMmio` off** and clear the `MmioWhitelist` that came with the XPS config.
+3. **Touchpad**: VoodooI2C 2.9.1 has no personality for the Tiger Lake I2C controllers (`8086:A0E8–A0EB`), and VoodooGPIO's TigerLakeLP matches only `INTC1055`, while this firmware uses `INT34C5`. `scripts/patch_kexts.py` adds both. If the touchpad vanishes after many forced power-offs (`TPD0._STA` depends on the `TPDT` value the BIOS probes), do a full shutdown and power on again.
+4. **Wi-Fi**: use `AirportItlwm` (Tahoe build 2.4.0) once macOS is installed.
+5. **Audio**: Tahoe removed AppleHDA; inject it with **SimpleHDA** (order Lilu → AppleALC → SimpleHDA). The speakers are on pin **0x14**; layouts 69 / 99 use 0x1B and stay silent. Use **`alcid=38`**.
+6. **iGPU acceleration**: see [docs/igpu-zep245.md](docs/igpu-zep245.md). The main trap: the driver's installer **does not install the Mesa ANV Vulkan driver**, and WindowServer then aborts in a loop with `Failed to create MetalDevice`. **AMFIPass plus the AMFI boot-args** are also required.
+7. **Installer USB**: run `createinstallmedia` from Terminal.app. Run from another process, even as root, TCC blocks writes to external volumes.
+8. **Dual boot**: put `EFI/OC` into the 100 MB Windows ESP, leaving `EFI/Boot` and `EFI/Microsoft` alone. Then in Windows run `bcdedit /copy {bootmgr} /d "OpenCore"` → `bcdedit /set {id} path \EFI\OC\OpenCore.efi` → `bcdedit /set {fwbootmgr} displayorder {id} /addfirst`.
+9. **Recovery**: if the accelerated config misbehaves, select Macintosh HD in OpenCore and press **Shift + Enter** for safe mode, or put the base `config.plist` back.
+
+### Install summary
+
+1. In Windows, run `windows-tools/collect-hwinfo.ps1` and SSDTTime (P → FakeEC Laptop → USBX → PluginType → RTCAWAC → PNLF (_UID 19) → XOSI).
+2. BIOS: turn Secure Boot off. VT-d cannot be turned off, so the config sets `DisableIoMapper`.
+3. Shrink the Windows partition and create an exFAT partition; during install, erase only that partition as APFS.
+4. `softwareupdate --fetch-full-installer --full-installer-version 26.7.1`, then `createinstallmedia`, and put `EFI/` on the USB ESP.
+5. Install macOS → copy `EFI/OC` to the internal ESP → add the bcdedit boot entry.
+6. Check audio, Wi-Fi and touchpad on the base config, then enable acceleration with [docs/igpu-zep245.md](docs/igpu-zep245.md).
+
+### Credits
+
+OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2 (acidanthera), VoodooI2C, OpenIntelWireless, laobamac (AirportItlwm-Tahoe, SimpleHDA), **zep245 and NullMoth Systems (Iris Xe i915 driver)**, dhinakg (AMFIPass), b00t0x (WhateverXe), watchthelight (XeGfx), JulioNectar (XPS 13 Plus Tahoe project), corpnewt (SSDTTime), USBToolBox.
