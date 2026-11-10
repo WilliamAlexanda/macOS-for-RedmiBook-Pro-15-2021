@@ -1,4 +1,4 @@
-# 校园网 / 企业级 Wi-Fi（WPA2-Enterprise, 802.1X）/ Campus & enterprise Wi-Fi
+# 企业级 Wi-Fi（WPA2-Enterprise, 802.1X）/ Enterprise Wi-Fi
 
 [中文](#中文) · [English](#english)
 
@@ -8,7 +8,7 @@
 
 ### 现象
 
-家用 Wi-Fi、手机热点都能连，但 **ShanghaiTech（WPA2 企业级，PEAP，学号 + 密码）一直连不上**：转圈一会儿后提示"离得近一点或运行诊断"。
+家用 Wi-Fi、手机热点都能连，但 **WPA2 企业级网络（PEAP，用户名 + 密码）一直连不上**：转圈一会儿后提示"离得近一点或运行诊断"。
 
 ### 原因：AirportItlwm 2.4.0（`738d4c6`）的 802.1X 时序 bug
 
@@ -21,7 +21,7 @@ kernel       populateJoinStatus: assoc status 0x22 retVal 0x3f1   (10 s join tim
 eapolclient  en0 STOP
 ```
 
-`eapolclient` 以为链路已经断开，EAP 报文（学号、密码）一个都没发出去，10 秒后系统判定加入失败。
+`eapolclient` 以为链路已经断开，EAP 报文（用户名、密码）一个都没发出去，10 秒后系统判定加入失败。
 家用 Wi-Fi 和热点是 WPA2-PSK，握手在驱动内部完成，不走 `eapolclient`，所以不受影响。
 
 同款网卡（AX201）、同一驱动版本的用户报告过同样的问题：[laobamac/itlwm#31](https://github.com/laobamac/itlwm/issues/31)。
@@ -46,11 +46,11 @@ eapolclient  en0 STOP
 | 确认 | 系统信息 → Wi-Fi → 固件版本显示 `itlwm: 2.4.0_4240f66` |
 
 本机实测：
-- ShanghaiTech（WPA2 企业级，PEAP）连接成功，日志为 `en0 EAP-PEAP: successfully authenticated`，联网正常；
+- WPA2 企业级网络（PEAP）连接成功，日志为 `en0 EAP-PEAP: successfully authenticated`，联网正常；
 - 关联在 5 秒内完成，没有再出现 10 秒超时；
 - 家用 WPA2-PSK 和手机热点照常可用。
 
-首次连接 ShanghaiTech 时：用户名填学号，密码填统一认证密码。弹出"验证证书"时点 **继续**，再输入一次电脑登录密码。
+首次连接企业级网络时：填入网络管理员提供的用户名和密码。弹出"验证证书"时点 **继续**，再输入一次电脑登录密码。
 
 **回退**：旧驱动备份在本机 `~/itlwm-backup/AirportItlwm-738d4c6.kext`，放回 `EFI/OC/Kexts/` 后重启即可。
 上游合并 #35 并发布新版后，建议换回 laobamac 的正式构建。
@@ -59,7 +59,7 @@ eapolclient  en0 STOP
 
 ## English
 
-**Symptom:** home WPA2-PSK networks and phone hotspots work, but the campus network (ShanghaiTech: WPA2-Enterprise, PEAP) fails with "move closer or run diagnostics".
+**Symptom:** home WPA2-PSK networks and phone hotspots work, but a WPA2-Enterprise network (PEAP) fails with "move closer or run diagnostics".
 
 **Cause:** an 802.1X timing bug in AirportItlwm 2.4.0 (`738d4c6`). Right after association, `eapolclient` asks the driver for the BSSID. The old build only answers once net80211 reaches `S_RUN`, so it returns `0xe0822403`. `eapolclient` then logs `Disassociated` and never sends the EAP response, and the join times out after 10 s (`assoc status 0x22 retVal 0x3f1`). PSK networks are unaffected, because their handshake runs inside the driver. Same report: [laobamac/itlwm#31](https://github.com/laobamac/itlwm/issues/31).
 
@@ -75,7 +75,7 @@ Build details:
 - Check: System Information shows `itlwm: 2.4.0_4240f66`.
 
 Result on this machine:
-- ShanghaiTech authenticates (`EAP-PEAP: successfully authenticated`), and internet works;
+- the WPA2-Enterprise network authenticates (`EAP-PEAP: successfully authenticated`), and internet works;
 - association completes in under 5 s;
 - PSK networks still work.
 

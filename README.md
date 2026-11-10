@@ -14,7 +14,7 @@
 | 核显 | Iris Xe `8086:9A49` | ✅ **苹果原生驱动**（实验）：WhateverXe 0.8.0 + 本仓库补丁，见 [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)<br>✅ **Metal 加速**（稳定）：[zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver)（i915 移植），见 [docs/igpu-zep245.md](docs/igpu-zep245.md) |
 | 屏幕 | 天马 TL156MDMP01，3200×2000，90/60Hz | ✅ 加速后原生 3200×2000 @ 90Hz；未加速时用 1920×1200 GOP |
 | 硬盘 | Intel 660p 1TB（SSDPEKNW010T8） | ✅ |
-| 网卡 | Intel AX201 | ✅ AirportItlwm（原生 Wi-Fi 菜单）；校园网 / 企业级 Wi-Fi（802.1X）需换用修复版，见 [docs/wifi-8021x.md](docs/wifi-8021x.md) |
+| 网卡 | Intel AX201 | ✅ AirportItlwm（原生 Wi-Fi 菜单）；企业级 Wi-Fi（802.1X）需换用修复版，见 [docs/wifi-8021x.md](docs/wifi-8021x.md) |
 | 蓝牙 | Intel 8087:0026 | ✅ IntelBluetoothFirmware |
 | 声卡 | Realtek ALC256（控制器 A0C8 处于 SST/DSP 模式） | ✅ 扬声器 / 耳机：SimpleHDA + `alcid=38` |
 | 内置麦克风 | DMIC 接在 Intel 智音技术 DSP 上 | ❌ |
@@ -44,7 +44,7 @@ BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BI
 | `docs/igpu-zep245.md` | **核显加速教程**（中英双语） |
 | `docs/dvmt-insyde.md`、`scripts/set-dvmt.sh`、`scripts/bios/` | **修改隐藏的 DVMT 显存**（60MB → 128MB），以及解包小米 BIOS、查找设置项位置的工具 |
 | `docs/igpu-whateverxe-native.md` | **苹果原生核显驱动点亮记录与教程**（中英双语）：黑屏 → 链路保留 → 花屏（位深）→ 亮度（PWM 周期） |
-| `docs/wifi-8021x.md`、`patches/itlwm/` | **校园网 / 企业级 Wi-Fi（802.1X）修复**：AirportItlwm 的 BSSID 时序 bug 及修复版驱动 |
+| `docs/wifi-8021x.md`、`patches/itlwm/` | **企业级 Wi-Fi（802.1X）修复**：AirportItlwm 的 BSSID 时序 bug 及修复版驱动 |
 | `docs/igpu-whateverxe.md` | WhateverXe 早期调查记录（60MB 冻结、128MB 黑屏） |
 | `windows-tools/collect-hwinfo.ps1` | 在 Windows 下收集硬件信息 |
 
@@ -53,7 +53,7 @@ BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BI
 1. **卡在 `EXITBS:START`**：Tiger Lake 必须打开 `Kernel → Quirks → AppleXcpmExtraMsrs`。CPU 伪装成 Ice Lake-U（`E5060700 00000000 00000000 00000000`，Mask `FFFFFFFF 00000000 00000000 00000000`），和机型 MacBookPro16,2 对应。
 2. **开机约 1 秒内核崩溃**（`Fault CR2: 0xff654c0f`，调用栈里没有 kext，`No mapping exists for frame pointer`）：原因是固件运行时服务要访问 SPI Flash 的 MMIO（0xFF000000 段），而 `DevirtualiseMmio` 把这段映射去掉了。**关闭 `Booter → Quirks → DevirtualiseMmio`**，同时清空从 XPS 配置带来的 `MmioWhitelist`。
 3. **触摸板**：VoodooI2C 2.9.1 没有 Tiger Lake I2C 控制器（`8086:A0E8–A0EB`）的匹配项；VoodooGPIO 的 TigerLakeLP 只认 `INTC1055`，而本机是 `INT34C5`。用 `scripts/patch_kexts.py` 补上这两项即可。如果某次开机触摸板消失（`TPD0._STA` 取决于 BIOS 写入的 `TPDT`），**完全关机后再开机**就能恢复。
-4. **Wi-Fi**：装好系统后用 `AirportItlwm`（Tahoe 版 2.4.0）。要连 ShanghaiTech、eduroam 等企业级 Wi-Fi，需换用带 802.1X 修复的构建（`2.4.0_4240f66`），见 [docs/wifi-8021x.md](docs/wifi-8021x.md)。
+4. **Wi-Fi**：装好系统后用 `AirportItlwm`（Tahoe 版 2.4.0）。要连 eduroam 等企业级 Wi-Fi，需换用带 802.1X 修复的构建（`2.4.0_4240f66`），见 [docs/wifi-8021x.md](docs/wifi-8021x.md)。
 5. **声音**：Tahoe 删除了 AppleHDA，要用 **SimpleHDA** 注入（加载顺序 Lilu → AppleALC → SimpleHDA）。本机扬声器接在 **0x14** 引脚（69 / 99 这两个 layout 用的是 0x1B，所以没声音），选 **`alcid=38`**。
 6. **核显加速**：见 [docs/igpu-zep245.md](docs/igpu-zep245.md)。最容易踩的坑：作者的安装工具**漏装 Mesa 的 Vulkan 驱动**，WindowServer 会报 `Failed to create MetalDevice` 然后反复崩溃；另外**必须开启 AMFIPass 并加上 AMFI 启动参数**。
 7. **安装 U 盘**：`createinstallmedia` 必须在「终端」App 里运行，从其他进程以 root 身份运行也会被 TCC 拦截，写不进外置卷。
@@ -118,7 +118,7 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hi
 | `docs/igpu-zep245.md` | **iGPU acceleration guide** (English / Chinese) |
 | `docs/dvmt-insyde.md`, `scripts/set-dvmt.sh`, `scripts/bios/` | **Change the hidden DVMT setting** (60 MB → 128 MB), plus tools to unpack the Xiaomi BIOS and locate setup options |
 | `docs/igpu-whateverxe-native.md` | **Native Apple iGPU driver: how it was lit up, and install guide** (English / Chinese): black screen → keep the link → garbled image (bpc) → brightness (PWM period) |
-| `docs/wifi-8021x.md`, `patches/itlwm/` | **Campus / enterprise Wi-Fi (802.1X) fix**: the AirportItlwm BSSID timing bug and the fixed driver build |
+| `docs/wifi-8021x.md`, `patches/itlwm/` | **Enterprise Wi-Fi (802.1X) fix**: the AirportItlwm BSSID timing bug and the fixed driver build |
 | `patches/whateverxe-0.8.0/`, `scripts/make_wex_config.py` | WhateverXe 0.8.0 patches, prebuilt kext, build script, config generator |
 | `docs/igpu-whateverxe.md` | Earlier WhateverXe investigation (freeze at 60 MB, black screen at 128 MB) |
 | `windows-tools/collect-hwinfo.ps1` | Hardware inventory from Windows |
@@ -128,7 +128,7 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hi
 1. **Hang at `EXITBS:START`**: enable `Kernel → Quirks → AppleXcpmExtraMsrs` (needed on Tiger Lake). CPUID spoof to Ice Lake-U (`E5060700 00000000 00000000 00000000`, mask `FFFFFFFF 00000000 00000000 00000000`), which matches MacBookPro16,2.
 2. **Kernel panic about 1 s after boot** (`Fault CR2: 0xff654c0f`, no kexts in the backtrace): firmware runtime services touch the SPI flash MMIO at 0xFF000000, and `DevirtualiseMmio` unmaps it. **Turn `Booter → Quirks → DevirtualiseMmio` off** and clear the `MmioWhitelist` that came with the XPS config.
 3. **Touchpad**: VoodooI2C 2.9.1 has no personality for the Tiger Lake I2C controllers (`8086:A0E8–A0EB`), and VoodooGPIO's TigerLakeLP matches only `INTC1055`, while this firmware uses `INT34C5`. `scripts/patch_kexts.py` adds both. If the touchpad vanishes after many forced power-offs (`TPD0._STA` depends on the `TPDT` value the BIOS probes), do a full shutdown and power on again.
-4. **Wi-Fi**: use `AirportItlwm` (Tahoe build 2.4.0) once macOS is installed. For WPA2-Enterprise / 802.1X networks (campus Wi-Fi, eduroam), use the build with the 802.1X fix (`2.4.0_4240f66`), see [docs/wifi-8021x.md](docs/wifi-8021x.md).
+4. **Wi-Fi**: use `AirportItlwm` (Tahoe build 2.4.0) once macOS is installed. For WPA2-Enterprise / 802.1X networks (e.g. eduroam), use the build with the 802.1X fix (`2.4.0_4240f66`), see [docs/wifi-8021x.md](docs/wifi-8021x.md).
 5. **Audio**: Tahoe removed AppleHDA; inject it with **SimpleHDA** (order Lilu → AppleALC → SimpleHDA). The speakers are on pin **0x14**; layouts 69 / 99 use 0x1B and stay silent. Use **`alcid=38`**.
 6. **iGPU acceleration**: see [docs/igpu-zep245.md](docs/igpu-zep245.md). The main trap: the driver's installer **does not install the Mesa ANV Vulkan driver**, and WindowServer then aborts in a loop with `Failed to create MetalDevice`. **AMFIPass plus the AMFI boot-args** are also required.
 7. **Installer USB**: run `createinstallmedia` from Terminal.app. Run from another process, even as root, TCC blocks writes to external volumes.
