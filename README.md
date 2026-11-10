@@ -2,16 +2,16 @@
 
 **中文** | [English](#english)
 
-在 **RedmiBook Pro 15 2021（Intel 版，i5-11300H / Iris Xe 9A49）** 上用 OpenCore 运行 **macOS Tahoe 26.7.1 (25G241)** 的完整记录，与 Windows 双系统共存。**核显 Metal 加速已跑通**（3200×2000 @ 90Hz）。
+在 **RedmiBook Pro 15 2021（Intel 版，i5-11300H / Iris Xe 9A49）** 上用 OpenCore 运行 **macOS Tahoe 26.7.1 (25G241)** 的完整记录，与 Windows 双系统共存。**核显 Metal 加速已跑通**（3200×2000 @ 90Hz），并且**苹果原生核显驱动也已点亮**（WhateverXe + 补丁，2026-11-10）。
 
-> ⚠️ 黑苹果有风险。仓库里的 `config.plist` / `config-igpu-accel.plist` 都已清空序列号（SystemSerialNumber / MLB / SystemUUID / ROM），使用前请用 GenSMBIOS 或 `macserial -m MacBookPro16,2` 生成你自己的一套。
+> ⚠️ 黑苹果有风险。仓库里的 `config.plist` / `config-igpu-accel.plist` / `config-whateverxe.plist` 都已清空序列号（SystemSerialNumber / MLB / SystemUUID / ROM），使用前请用 GenSMBIOS 或 `macserial -m MacBookPro16,2` 生成你自己的一套。
 
 ## 硬件与状态
 
 | 部件 | 型号 | 状态 |
 |---|---|---|
 | CPU | i5-11300H（Tiger Lake-H35，model 0x8C） | ✅ 伪装成 Ice Lake-U（`Cpuid1Data E5060700`） |
-| 核显 | Iris Xe `8086:9A49` | ✅ **Metal 加速**：[zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver)（i915 移植），见 [docs/igpu-zep245.md](docs/igpu-zep245.md) |
+| 核显 | Iris Xe `8086:9A49` | ✅ **苹果原生驱动**（实验）：WhateverXe 0.8.0 + 本仓库补丁，见 [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)<br>✅ **Metal 加速**（稳定）：[zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver)（i915 移植），见 [docs/igpu-zep245.md](docs/igpu-zep245.md) |
 | 屏幕 | 天马 TL156MDMP01，3200×2000，90/60Hz | ✅ 加速后原生 3200×2000 @ 90Hz；未加速时用 1920×1200 GOP |
 | 硬盘 | Intel 660p 1TB（SSDPEKNW010T8） | ✅ |
 | 网卡 | Intel AX201 | ✅ AirportItlwm（原生 Wi-Fi 菜单） |
@@ -32,15 +32,19 @@ BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BI
 |---|---|
 | `EFI/OC/config.plist` | **基础配置**：WhateverGreen + `-igfxvesa`，无核显加速，1920×1200。适合安装和救援 |
 | `EFI/OC/config-igpu-accel.plist` | **日常配置**：zep245 驱动 + Metal 加速（需按 [docs/igpu-zep245.md](docs/igpu-zep245.md) 装好驱动） |
+| `EFI/OC/config-whateverxe.plist` | **原生驱动配置（实验）**：WhateverXe + 苹果 Tiger Lake 驱动（见 [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)） |
 | `EFI/COMPONENTS.md` | OpenCore 与各 kext 的版本和下载地址（二进制文件不在仓库里） |
 | `acpi/` | SSDTTime 为本机生成的 SSDT + `patches_OC.plist` |
 | `scripts/make_config.py` | 生成基础 `config.plist`（底板来自 [XPS 13 Plus 项目](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe)） |
 | `scripts/make_nmx_config.py` | 由基础配置生成核显加速配置 |
+| `scripts/make_wex_config.py` | 由基础配置生成原生驱动（WhateverXe）配置 |
+| `patches/whateverxe-0.8.0/` | WhateverXe 0.8.0 补丁（eDP 链路保留、位深一致、背光周期）、预编译 kext、编译脚本 |
 | `scripts/patch_kexts.py` | 给 VoodooI2C / VoodooGPIO 加 Tiger Lake 支持 |
 | `scripts/deploy-redmi.sh`、`scripts/try-alcid.sh` | 通过网线远程部署 EFI、切换 AppleALC layout |
 | `docs/igpu-zep245.md` | **核显加速教程**（中英双语） |
 | `docs/dvmt-insyde.md`、`scripts/set-dvmt.sh`、`scripts/bios/` | **修改隐藏的 DVMT 显存**（60MB → 128MB），以及解包小米 BIOS、查找设置项位置的工具 |
-| `docs/igpu-whateverxe.md` | WhateverXe 调查记录：60MB 时开加速就冻结；改成 128MB 后不再冻结，但屏幕全黑，已报告给作者 |
+| `docs/igpu-whateverxe-native.md` | **苹果原生核显驱动点亮记录与教程**（中英双语）：黑屏 → 链路保留 → 花屏（位深）→ 亮度（PWM 周期） |
+| `docs/igpu-whateverxe.md` | WhateverXe 早期调查记录（60MB 冻结、128MB 黑屏） |
 | `windows-tools/collect-hwinfo.ps1` | 在 Windows 下收集硬件信息 |
 
 ## 关键配置要点（踩过的坑）
@@ -66,7 +70,7 @@ BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BI
 
 ## 致谢
 
-OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2（acidanthera）、VoodooI2C、OpenIntelWireless、laobamac（AirportItlwm-Tahoe、SimpleHDA）、**zep245 与 NullMoth Systems（Iris Xe i915 驱动）**、dhinakg（AMFIPass）、b00t0x（WhateverXe）、watchthelight（XeGfx）、JulioNectar（XPS 13 Plus Tahoe 项目）、corpnewt（SSDTTime）、USBToolBox。
+OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2（acidanthera）、VoodooI2C、OpenIntelWireless、laobamac（AirportItlwm-Tahoe、SimpleHDA）、**zep245 与 NullMoth Systems（Iris Xe i915 驱动）**、dhinakg（AMFIPass）、b00t0x（WhateverXe）、KenzoPortela / nickk19 / Aqpcet（eDP 链路保留补丁）、qqaoshi888（eDP 训练修复补丁）、watchthelight（XeGfx）、JulioNectar（XPS 13 Plus Tahoe 项目）、corpnewt（SSDTTime）、USBToolBox。
 
 ---
 
@@ -74,16 +78,16 @@ OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2（acidanther
 
 ## English
 
-A complete record of running **macOS Tahoe 26.7.1 (25G241)** with OpenCore on the **RedmiBook Pro 15 2021 (Intel, i5-11300H / Iris Xe 9A49)**, dual-booting with Windows. **Iris Xe Metal acceleration works** (3200x2000 @ 90 Hz).
+A complete record of running **macOS Tahoe 26.7.1 (25G241)** with OpenCore on the **RedmiBook Pro 15 2021 (Intel, i5-11300H / Iris Xe 9A49)**, dual-booting with Windows. **Iris Xe Metal acceleration works** (3200x2000 @ 90 Hz), and **Apple's native iGPU driver now lights the panel too** (WhateverXe + patches, 2026-11-10).
 
-> ⚠️ Use at your own risk. Serials (SystemSerialNumber / MLB / SystemUUID / ROM) are blanked in `config.plist` and `config-igpu-accel.plist`. Generate your own with GenSMBIOS or `macserial -m MacBookPro16,2`.
+> ⚠️ Use at your own risk. Serials (SystemSerialNumber / MLB / SystemUUID / ROM) are blanked in `config.plist`, `config-igpu-accel.plist` and `config-whateverxe.plist`. Generate your own with GenSMBIOS or `macserial -m MacBookPro16,2`.
 
 ### Hardware and status
 
 | Part | Model | Status |
 |---|---|---|
 | CPU | i5-11300H (Tiger Lake-H35, model 0x8C) | ✅ spoofed as Ice Lake-U (`Cpuid1Data E5060700`) |
-| iGPU | Iris Xe `8086:9A49` | ✅ **Metal acceleration** with [zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver) (i915 port), see [docs/igpu-zep245.md](docs/igpu-zep245.md) |
+| iGPU | Iris Xe `8086:9A49` | ✅ **Apple's native driver** (experimental): WhateverXe 0.8.0 + patches from this repo, see [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)<br>✅ **Metal acceleration** (stable) with [zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver) (i915 port), see [docs/igpu-zep245.md](docs/igpu-zep245.md) |
 | Panel | Tianma TL156MDMP01, 3200x2000, 90/60 Hz | ✅ native 3200x2000 @ 90 Hz when accelerated; 1920x1200 GOP otherwise |
 | SSD | Intel 660p 1 TB | ✅ |
 | Wi-Fi / BT | Intel AX201 / 8087:0026 | ✅ AirportItlwm / IntelBluetoothFirmware |
@@ -103,6 +107,7 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hi
 |---|---|
 | `EFI/OC/config.plist` | **Base config**: WhateverGreen + `-igfxvesa`, no acceleration, 1920x1200. For installing and recovery |
 | `EFI/OC/config-igpu-accel.plist` | **Daily config**: zep245 driver + Metal acceleration (install the driver first, see [docs/igpu-zep245.md](docs/igpu-zep245.md)) |
+| `EFI/OC/config-whateverxe.plist` | **Native driver config (experimental)**: WhateverXe + Apple's Tiger Lake drivers (see [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)) |
 | `EFI/COMPONENTS.md` | OpenCore / kext versions and download links (binaries are not in this repo) |
 | `acpi/` | SSDTs generated by SSDTTime for this machine + `patches_OC.plist` |
 | `scripts/make_config.py` | Builds the base `config.plist` (template from the [XPS 13 Plus project](https://github.com/JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe)) |
@@ -111,7 +116,9 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hi
 | `scripts/deploy-redmi.sh`, `scripts/try-alcid.sh` | Remote EFI deploy and AppleALC layout testing over Ethernet |
 | `docs/igpu-zep245.md` | **iGPU acceleration guide** (English / Chinese) |
 | `docs/dvmt-insyde.md`, `scripts/set-dvmt.sh`, `scripts/bios/` | **Change the hidden DVMT setting** (60 MB → 128 MB), plus tools to unpack the Xiaomi BIOS and locate setup options |
-| `docs/igpu-whateverxe.md` | WhateverXe investigation: freezes at 60 MB; at 128 MB the freeze is gone but the screen stays black (reported upstream) |
+| `docs/igpu-whateverxe-native.md` | **Native Apple iGPU driver: how it was lit up, and install guide** (English / Chinese): black screen → keep the link → garbled image (bpc) → brightness (PWM period) |
+| `patches/whateverxe-0.8.0/`, `scripts/make_wex_config.py` | WhateverXe 0.8.0 patches, prebuilt kext, build script, config generator |
+| `docs/igpu-whateverxe.md` | Earlier WhateverXe investigation (freeze at 60 MB, black screen at 128 MB) |
 | `windows-tools/collect-hwinfo.ps1` | Hardware inventory from Windows |
 
 ### Key fixes
@@ -137,4 +144,4 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hi
 
 ### Credits
 
-OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2 (acidanthera), VoodooI2C, OpenIntelWireless, laobamac (AirportItlwm-Tahoe, SimpleHDA), **zep245 and NullMoth Systems (Iris Xe i915 driver)**, dhinakg (AMFIPass), b00t0x (WhateverXe), watchthelight (XeGfx), JulioNectar (XPS 13 Plus Tahoe project), corpnewt (SSDTTime), USBToolBox.
+OpenCore / Lilu / WhateverGreen / AppleALC / VirtualSMC / VoodooPS2 (acidanthera), VoodooI2C, OpenIntelWireless, laobamac (AirportItlwm-Tahoe, SimpleHDA), **zep245 and NullMoth Systems (Iris Xe i915 driver)**, dhinakg (AMFIPass), b00t0x (WhateverXe), KenzoPortela / nickk19 / Aqpcet (eDP keep patch), qqaoshi888 (eDP training fix), watchthelight (XeGfx), JulioNectar (XPS 13 Plus Tahoe project), corpnewt (SSDTTime), USBToolBox.

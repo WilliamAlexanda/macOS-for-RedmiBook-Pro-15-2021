@@ -1,5 +1,7 @@
 # Iris Xe acceleration with WhateverXe on RedmiBook Pro 15 2021 — investigation report
 
+> **2026-11-10 更新 / Update**：黑屏已解决，WhateverXe 0.8.0 加补丁后苹果原生驱动在内屏正常工作，见 [igpu-whateverxe-native.md](igpu-whateverxe-native.md)。The black screen is solved: WhateverXe 0.8.0 with patches drives the panel; see [igpu-whateverxe-native.md](igpu-whateverxe-native.md).
+>
 > **已被取代 / Superseded**：核显加速已改用 [zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver) 实现，见 [igpu-zep245.md](igpu-zep245.md)。The working route is now the zep245 driver; see [igpu-zep245.md](igpu-zep245.md).
 >
 > **中文摘要**：

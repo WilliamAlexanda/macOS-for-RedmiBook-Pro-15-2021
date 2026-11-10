@@ -1,0 +1,27 @@
+# Stock WhateverXe 0.8.0 + Graphics 0.4.1, DVMT 128MB, Tahoe 26.7.1 (25G241): framebuffer errors, counted
+ 177 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] FB0 is not enabled
+  20 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][PORT     ] Unsupported DDI
+   5 (AppleIntelTGLGraphicsFramebuffer) [IGFB][INFO ][DISPLAY  ] FB0: Complete modeset
+   5 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][LINK_TRAINING] Phase 2 of link training failed - notifying AGDC to take display offline
+   5 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] FB0: Hardware mode set failed, err = 0xe00002bc
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][POWER_WELL] EFI should not enable PG4 power well - overriding
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][POWER_WELL] EFI should not enable AUX0 power well - overriding
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] Wrong CD clock frequency 0x0 set by EFI
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] Unsupported CD clock decimal frequency 0x28b
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] EFI using a different backlight frequency
+
+# WindowServer, 4 minutes
+20961 Attempting to get capabilities when none exist
+10483 No plane indices
+
+# Patched build (keep + bpc + backlight), same machine: framebuffer messages, counted
+  20 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][PORT     ] Unsupported DDI
+   3 (AppleIntelTGLGraphicsFramebuffer) [IGFB][INFO ][DISPLAY  ] FB0: Partial modeset by updating scaler
+   2 (AppleIntelTGLGraphicsFramebuffer) [IGFB][INFO ][DISPLAY  ] FB0: Partial modeset by updating plane
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][INFO ][DISPLAY  ] Starting FB driver
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][POWER_WELL] EFI should not enable PG4 power well - overriding
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][POWER_WELL] EFI should not enable AUX0 power well - overriding
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] Wrong CD clock frequency 0x0 set by EFI
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] Unsupported CD clock decimal frequency 0x28b
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] FB0: Flip called without enabling VBL
+   1 (AppleIntelTGLGraphicsFramebuffer) [IGFB][ERROR][DISPLAY  ] EFI using a different backlight frequency

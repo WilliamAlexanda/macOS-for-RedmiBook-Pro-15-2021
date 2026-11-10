@@ -1,0 +1,234 @@
+diff -ruN a/WhateverXe/kern_xe.cpp b/WhateverXe/kern_xe.cpp
+--- a/WhateverXe/kern_xe.cpp
++++ b/WhateverXe/kern_xe.cpp
+@@ -3142,6 +3142,18 @@
+ constexpr uint32_t tglProgramCapacity = 512;
+ struct TGLProgramRecord { uint64_t q[8]; };
+ IOSimpleLock *tglProgramLock;
++// -wex-tgl-edp-softsleep state: the framebuffer whose firmware link is kept,
++// and the thread currently inside its prepareToExitWake (display sleep).
++static void *volatile tglEDPKeptFB {};
++static void *volatile tglSoftSleepThread {};
++static volatile bool tglSoftSleepBacklightOff {};
++static bool tglSoftSleepEnabled() {
++ static int v=-1;if(v<0)v=checkKernelArgument("-wex-tgl-edp-softsleep") ? 1 : 0;
++ return v==1;
++}
++static bool tglSoftSleepActive(void *fb=nullptr) {
++ return tglSoftSleepThread==current_thread() && tglEDPKeptFB && (!fb || fb==tglEDPKeptFB);
++}
+ // Keep the same binary, allocations and native hooks for observer A/B trials.
+ // Disabled means no timestamp/copy/IRQ lock on writes; not an r64-equivalent ABI
+ // or a claim that the remaining wrapper/observers are timing-neutral.
+@@ -13681,6 +13693,52 @@
+     patcher.clearError();
+     // ADLS_PANEL_PWM_INSTALL_END
+    }
++   // -wex-tgl-edp-keep: keep the firmware-trained eDP link on TGL (port of
++   // nickk19's display13 -wex-edp-keep, #43, with Aqpcet's TGL relaxations).
++   // hwRegsNeedUpdate answers "no update" when pipe A already scans out the
++   // requested active size over a live eDP SST link on DDI A, so the donor
++   // performs only a partial mode set and never stops/retrains the link.
++   // Donor sites (keep + softsleep) validated identical on the
++   // AppleIntelTGLGraphicsFramebuffer 16.0.0 from WhateverXe Graphics 0.4.0
++   // for Sequoia 15.8.2 and Tahoe 26.7.2 (same __text): hwRegsNeedUpdate
++   // +0x4F044, prepareToExitWake +0x25062, prepareToEnterWake +0x25A4E,
++   // hwSetPanelPower +0x48652. Any other offset or prologue routes nothing.
++   if(tglActive && !adlsDisplaySelected && !display13FramebufferRequested && checkKernelArgument("-wex-tgl-edp-keep")) {
++    const char *regs="__ZN31AppleIntelFramebufferController16hwRegsNeedUpdateEP21AppleIntelFramebufferP21AppleIntelDisplayPathP10CRTCParamsPK29IODetailedTimingInformationV2PN16AppleIntelScaler12SCALERPARAMSE";
++    const uint8_t regsEntry[]={0x55,0x48,0x89,0xe5,0x41,0x57,0x41,0x56,0x41,0x55,0x41,0x54,0x53,0x48,0x83,0xec,0x18};
++    const auto u=patcher.solveSymbol(index,regs,address,size);patcher.clearError();
++    bool ready=u && u==address+0x4F044 && !memcmp(reinterpret_cast<void *>(u),regsEntry,sizeof(regsEntry));
++    if(ready) {
++     KernelPatcher::RouteRequest route(regs,wrapTGLRegsNeedUpdate,orgTGLRegsNeedUpdate);
++     ready=patcher.routeMultiple(index,&route,1,address,size);
++    }
++    IORegistryEntry::getRegistryRoot()->setProperty("TGLEDPKeepReady",ready);
++    SYSLOG("igfx","TGL eDP keep route ready=%d",ready);
++    patcher.clearError();
++   }
++   if(tglActive && !adlsDisplaySelected && !display13FramebufferRequested && tglSoftSleepEnabled()) {
++    const char *exitWake="__ZN21AppleIntelFramebuffer17prepareToExitWakeEv";
++    const char *enterWake="__ZN21AppleIntelFramebuffer18prepareToEnterWakeEv";
++    const char *panel="__ZN31AppleIntelFramebufferController15hwSetPanelPowerEj";
++    const uint8_t exitEntry[]={0x55,0x48,0x89,0xe5,0x41,0x57,0x41,0x56,0x53,0x50};
++    const uint8_t enterEntry[]={0x55,0x48,0x89,0xe5,0x41,0x57,0x41,0x56,0x41,0x55,0x41,0x54,0x53,0x48,0x81,0xec,0xe8,0x00,0x00,0x00};
++    const uint8_t panelEntry[]={0x55,0x48,0x89,0xe5,0x41,0x57,0x41,0x56,0x53,0x48,0x83,0xec,0x28,0x89,0xf3,0x49,0x89,0xff};
++    const auto ex=patcher.solveSymbol(index,exitWake,address,size);patcher.clearError();
++    const auto en=patcher.solveSymbol(index,enterWake,address,size);patcher.clearError();
++    const auto pp=patcher.solveSymbol(index,panel,address,size);patcher.clearError();
++    bool ready=ex==address+0x25062 && en==address+0x25a4e && pp==address+0x48652 &&
++     !memcmp(reinterpret_cast<void *>(ex),exitEntry,sizeof(exitEntry)) &&
++     !memcmp(reinterpret_cast<void *>(en),enterEntry,sizeof(enterEntry)) &&
++     !memcmp(reinterpret_cast<void *>(pp),panelEntry,sizeof(panelEntry));
++    if(ready) {
++     KernelPatcher::RouteRequest routes[] {{exitWake,wrapTGLExitWake,orgTGLExitWake},
++      {enterWake,wrapTGLEnterWake,orgTGLEnterWake},{panel,wrapTGLPanelPowerSoft,orgTGLPanelPowerSoft}};
++     ready=patcher.routeMultipleShort(index,routes,arrsize(routes),address,size);
++    }
++    IORegistryEntry::getRegistryRoot()->setProperty("TGLSoftSleepReady",ready);
++    SYSLOG("igfx","TGL eDP soft-sleep routes ready=%d",ready);
++    patcher.clearError();
++   }
+ 
+ 			if (tglActive) {
+ 				// TGL/Xe-LP has no dedicated eDP transcoder. Keep the allocated
+@@ -13907,6 +13965,119 @@
+  if(s->display13FramebufferRequested && !display13PanelHealthy())return kIOReturnNotReady;
+  return result;
+ }
++// TGLEDPKeep record (u32): version, call, kept, reasons, pipe, ddi, edp,
++// portLanes, portRate, live func/transconf/htotal/hblank/hsync/vtotal/vblank/
++// vsync/pipesrc, wanted func/htotal/hblank/hsync/vtotal/vblank/vsync/pipesrc,
++// DPCD 0x202..0x207 (2 words), update (donor's own answer).
++// reasons: 1 not panel path/pipe A, 2 readout failed, 4 transcoder off or not
++// on DDI A / not DP SST, 8 pipe off, 0x10 active size differs; recorded only:
++// 0x100 blanking differs, 0x200 source size differs, 0x400 lanes differ,
++// 0x800 depth differs, 0x1000 sink not trained.
++bool XE::wrapTGLRegsNeedUpdate(void *controller,void *fb,void *path,void *params,const void *timing,void *scaler) {
++ auto s=callbackXE;
++ const bool update=FunctionCast(wrapTGLRegsNeedUpdate,s->orgTGLRegsNeedUpdate)(controller,fb,path,params,timing,scaler);
++ if(!update || !controller || !path || !params || !s->orgTGLRegisterRead)return update;
++ static uint32_t calls {},kept {};
++ uint32_t rec[34] {};
++ rec[0]=1;rec[1]=__sync_add_and_fetch(&calls,1);
++ uint32_t reasons=0;
++ auto p=static_cast<uint8_t *>(path);
++ const uint32_t pipe=*reinterpret_cast<uint32_t *>(p+0x3640);
++ auto port=*reinterpret_cast<uint8_t **>(p+0x3648);
++ auto access=*reinterpret_cast<void **>(static_cast<uint8_t *>(controller)+0xC40);
++ auto config=port ? *reinterpret_cast<uint32_t **>(port+0x548) : nullptr;
++ rec[4]=pipe;rec[5]=port ? *reinterpret_cast<uint32_t *>(port+0x120) : ~0U;rec[6]=config ? config[0] : ~0U;
++ if(port){rec[7]=*reinterpret_cast<uint32_t *>(port+0x124);rec[8]=*reinterpret_cast<uint32_t *>(port+0x128);}
++ if(pipe!=0 || !port || !access || !config || config[0]!=0 || rec[5]!=0)reasons|=1;
++ else {
++  const auto read=[&](uint32_t reg){return FunctionCast(wrapTGLRegisterRead,s->orgTGLRegisterRead)(access,reg);};
++  const uint32_t regs[]={0x60400,0x70008,0x60000,0x60004,0x60008,0x6000C,0x60010,0x60014,0x6001C};
++  for(unsigned i=0;i<9;++i){rec[9+i]=read(regs[i]);if(rec[9+i]==~0U)reasons|=2;}
++  auto w=static_cast<uint8_t *>(params);
++  const auto field=[&](uint32_t off){uint32_t v;memcpy(&v,w+off,4);return v;};
++  rec[18]=field(0x4);for(unsigned i=0;i<6;++i)rec[19+i]=field(0x10+4*i);rec[25]=field(0x28);
++  const uint32_t func=rec[9],conf=rec[10];
++  // TGL TRANS_DDI_FUNC_CTL: enable bit31, DDI select 30:27 = port+1, mode 26:24 = DP SST (2).
++  if(!(func&0x80000000U) || ((func>>27)&0xF)!=1 || ((func>>24)&7)!=2)reasons|=4;
++  if((conf&0xC0000000U)!=0xC0000000U)reasons|=8;
++  if((rec[11]&0x3FFFU)!=(rec[19]&0x3FFFU) || (rec[14]&0x1FFFU)!=(rec[22]&0x1FFFU))reasons|=0x10;
++  for(unsigned i=0;i<6;++i)if(rec[11+i]!=rec[19+i])reasons|=0x100;
++  if(rec[17]!=rec[25])reasons|=0x200;
++  if(((func>>1)&7)!=((rec[18]>>1)&7))reasons|=0x400;
++  if((func^rec[18])&0x00700000U)reasons|=0x800;
++  uint8_t status[8] {};
++  if(wrapTGLReadAUX(port,0x202,status,6) || (status[0]&0x77)!=0x77 || (((func>>1)&7)==3 && (status[1]&0x77)!=0x77) || !(status[2]&1))
++   reasons|=0x1000;
++  memcpy(&rec[26],status,8);
++ }
++ const bool keep=!(reasons&0xFF);
++ rec[2]=keep ? __sync_add_and_fetch(&kept,1) : kept;
++ if(keep)tglEDPKeptFB=fb;rec[3]=reasons;rec[28]=update;
++ auto root=IORegistryEntry::getRegistryRoot();
++ if(rec[1]==1)root->setProperty("TGLEDPKeepFirst",rec,sizeof(rec));
++ root->setProperty("TGLEDPKeepLast",rec,sizeof(rec));
++ root->setProperty("TGLEDPKept",rec[2],32);
++ SYSLOG("igfx","TGL eDP keep call=%u keep=%d reasons=%x live func=%x conf=%x h=%x v=%x src=%x want func=%x h=%x v=%x src=%x sink %02x %02x %02x",
++  rec[1],keep,reasons,rec[9],rec[10],rec[11],rec[14],rec[17],rec[18],rec[19],rec[22],rec[25],
++  rec[26]&0xFF,(rec[26]>>8)&0xFF,(rec[26]>>16)&0xFF);
++ return keep ? false : update;
++}
++// -wex-tgl-edp-softsleep: display sleep on the kept eDP panel turns only the
++// backlight off. The donor's prepareToExitWake would disable the display,
++// put the sink in D3 and cut panel power, so its wake path (prepareToEnterWake)
++// needs a complete mode set and retraining, which this panel never completes.
++// Inside prepareToExitWake for the kept framebuffer, disableDisplay(bool),
++// setDPPowerState(D3) and hwSetPanelPower(off) are skipped (the pipe, link and
++// panel stay up) and EDP_BLC_ENABLE is cleared instead; prepareToEnterWake then
++// finds the pipe running, hwRegsNeedUpdate keeps the link (partial mode set)
++// and the backlight enable is restored. System sleep loses the link anyway.
++static void tglSoftSleepRecord(uint32_t what,uint32_t a,uint32_t b) {
++ static uint32_t n {};
++ uint32_t rec[4] {__sync_add_and_fetch(&n,1),what,a,b};
++ char key[40];snprintf(key,sizeof(key),"TGLSoftSleep%u",what);
++ IORegistryEntry::getRegistryRoot()->setProperty(key,rec,sizeof(rec));
++}
++void XE::tglSoftSleepBacklight(void *controller,bool on) {
++ auto s=callbackXE;
++ auto access=controller ? *reinterpret_cast<void **>(static_cast<uint8_t *>(controller)+0xC40) : nullptr;
++ if(!access || !s->orgTGLRegisterRead)return;
++ const auto pp=FunctionCast(wrapTGLRegisterRead,s->orgTGLRegisterRead)(access,0xC7204);
++ if(pp==~0U)return;
++ const uint32_t want=on ? ((pp&1) ? (pp|4U) : pp) : (pp&~4U);
++ if(want!=pp)wrapTGLRegisterWrite(access,0xC7204,want);
++ tglSoftSleepRecord(on?2:1,pp,want);
++ SYSLOG("igfx","TGL eDP soft-sleep backlight %s PP_CONTROL %x -> %x",on?"on":"off",pp,want);
++}
++uint64_t XE::wrapTGLExitWake(void *fb) {
++ auto s=callbackXE;
++ const bool soft=tglSoftSleepEnabled() && fb && fb==tglEDPKeptFB;
++ if(soft){tglSoftSleepThread=current_thread();tglSoftSleepRecord(0,1,0);}
++ const auto r=FunctionCast(wrapTGLExitWake,s->orgTGLExitWake)(fb);
++ if(soft) {
++  tglSoftSleepThread=nullptr;
++  if(!tglSoftSleepBacklightOff) {
++   tglSoftSleepBacklight(*reinterpret_cast<void **>(static_cast<uint8_t *>(fb)+0x1d0),false);
++   tglSoftSleepBacklightOff=true;
++  }
++ }
++ return r;
++}
++uint64_t XE::wrapTGLEnterWake(void *fb) {
++ auto s=callbackXE;
++ const auto r=FunctionCast(wrapTGLEnterWake,s->orgTGLEnterWake)(fb);
++ if(fb && fb==tglEDPKeptFB && tglSoftSleepBacklightOff) {
++  tglSoftSleepBacklight(*reinterpret_cast<void **>(static_cast<uint8_t *>(fb)+0x1d0),true);
++  tglSoftSleepBacklightOff=false;
++ }
++ return r;
++}
++uint32_t XE::wrapTGLPanelPowerSoft(void *controller,uint32_t state) {
++ if(state!=2 && tglSoftSleepActive()) {
++  tglSoftSleepRecord(3,state,0);
++  return 0;
++ }
++ return FunctionCast(wrapTGLPanelPowerSoft,callbackXE->orgTGLPanelPowerSoft)(controller,state);
++}
+ uint32_t XE::wrapADLSPanelBacklight(void *controller,uint32_t brightness) {
+  auto s=callbackXE;
+  if(s->display13FramebufferRequested && s->adlnOutputWiring.panel)return display13PanelBrightness(controller,brightness);
+@@ -16817,6 +16988,10 @@
+ 
+ uint32_t XE::wrapTGLDPPower(void *port, uint8_t state) {
+ 	auto caller = __builtin_return_address(0);
++	if (state != 1 && tglSoftSleepActive()) {
++		auto cfg = *reinterpret_cast<uint32_t **>(static_cast<uint8_t *>(port) + 0x548);
++		if (cfg && cfg[0] == 0) { tglSoftSleepRecord(5, state, 0); return 0; }
++	}
+ 	tglConnectionRecord(port, 4, false, 0, state, caller);
+ 	auto bytes = static_cast<uint8_t *>(port);
+ 	auto config = *reinterpret_cast<uint32_t **>(bytes + 0x548);
+@@ -18486,6 +18661,7 @@
+ 
+ void XE::wrapTGLFBDisable(void *fb, bool flag) {
+ 	auto caller = __builtin_return_address(0);
++	if (tglSoftSleepActive(fb)) { tglSoftSleepRecord(4, flag, 0); return; }
+ 	tglObserveResource(fb, nullptr, 3, false, 0, flag, 0, caller);
+ 	FunctionCast(wrapTGLFBDisable, callbackXE->orgTGLFBDisable)(fb, flag);
+ 	tglObserveResource(fb, nullptr, 3, true, 0, flag, 0, caller);
+diff -ruN a/WhateverXe/kern_xe.hpp b/WhateverXe/kern_xe.hpp
+--- a/WhateverXe/kern_xe.hpp
++++ b/WhateverXe/kern_xe.hpp
+@@ -120,9 +120,16 @@
+     bool adlsPLLTableReady {},adlsClockReady {},adlsPowerReady {},adlsPanelPWMReady {};
+  XELP::PanelPWM adlsPanelPWM;
+  mach_vm_address_t orgADLSLightUpEDP {},orgADLSPanelBacklight {};
++ mach_vm_address_t orgTGLRegsNeedUpdate {};
++ mach_vm_address_t orgTGLExitWake {},orgTGLEnterWake {},orgTGLPanelPowerSoft {};
+  static bool adlsPanelPWMTarget(void *controller,void *&access,void *&power);
+  static bool adlsCapturePanelPWM(void *controller);
+  static uint32_t wrapADLSLightUpEDP(void *controller,void *fb,void *path,const void *timing);
++ static bool wrapTGLRegsNeedUpdate(void *controller,void *fb,void *path,void *params,const void *timing,void *scaler);
++ static uint64_t wrapTGLExitWake(void *fb);
++ static uint64_t wrapTGLEnterWake(void *fb);
++ static uint32_t wrapTGLPanelPowerSoft(void *controller,uint32_t state);
++ static void tglSoftSleepBacklight(void *controller,bool on);
+  static uint32_t wrapADLSPanelBacklight(void *controller,uint32_t brightness);
+  static void wrapADLSPanelPWMEnable(void *access);
+     mach_vm_address_t orgADLSPowerPG {};

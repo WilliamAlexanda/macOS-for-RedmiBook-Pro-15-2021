@@ -1,0 +1,5 @@
+658b57c795c252ab372dd5f8a1bd3af8fb50413c7ced8f6fcc93fb8fb59fe9ed  WhateverXe-0.8.0-redmibook-RELEASE.zip
+fe2c15ac6888f06ca5242bcc860a2d8b375ad74dd1ae9d4a86cb24a3fdf81c84  01-edp-fix-training-ddi-conflict.patch
+64ce091d5278c6fd8388044b19e9d34ad6e96c5c919a4cbf19938eb15be17ced  02-tgl-edp-keep-softsleep.patch
+5458aa1d8f8d012bfe2c9f4ed7415672110973650e56e031b9b852beb1bf3c94  03-redmibook-bpc-backlight.patch
+f51977f00ea1d13e06511b258816b08a65b1d73cb4dab16a87faf5bffa9ddb23  all-in-one.patch
