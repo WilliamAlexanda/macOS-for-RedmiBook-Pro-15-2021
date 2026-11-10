@@ -13,6 +13,7 @@
 | CPU | i5-11300H（Tiger Lake-H35，model 0x8C） | ✅ 伪装成 Ice Lake-U（`Cpuid1Data E5060700`） |
 | 核显 | Iris Xe `8086:9A49` | ✅ **苹果原生驱动**（实验）：WhateverXe 0.8.0 + 本仓库补丁，见 [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)<br>✅ **Metal 加速**（稳定）：[zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver)（i915 移植），见 [docs/igpu-zep245.md](docs/igpu-zep245.md) |
 | 屏幕 | 天马 TL156MDMP01，3200×2000，90/60Hz | ✅ 加速后原生 3200×2000 @ 90Hz；未加速时用 1920×1200 GOP |
+| HDMI 外接屏 | — | ✅ 原生驱动下需 EDID 覆盖才能显示正确颜色（强制 8 bpc RGB），见 [docs/hdmi-color.md](docs/hdmi-color.md) |
 | 硬盘 | Intel 660p 1TB（SSDPEKNW010T8） | ✅ |
 | 网卡 | Intel AX201 | ✅ AirportItlwm（原生 Wi-Fi 菜单）；企业级 Wi-Fi（802.1X）需换用修复版，见 [docs/wifi-8021x.md](docs/wifi-8021x.md) |
 | 蓝牙 | Intel 8087:0026 | ✅ IntelBluetoothFirmware |
@@ -45,6 +46,7 @@ BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BI
 | `docs/dvmt-insyde.md`、`scripts/set-dvmt.sh`、`scripts/bios/` | **修改隐藏的 DVMT 显存**（60MB → 128MB），以及解包小米 BIOS、查找设置项位置的工具 |
 | `docs/igpu-whateverxe-native.md` | **苹果原生核显驱动点亮记录与教程**（中英双语）：黑屏 → 链路保留 → 花屏（位深）→ 亮度（PWM 周期） |
 | `docs/wifi-8021x.md`、`patches/itlwm/` | **企业级 Wi-Fi（802.1X）修复**：AirportItlwm 的 BSSID 时序 bug 及修复版驱动 |
+| `docs/hdmi-color.md`、`scripts/edid-fix/` | **HDMI 外接屏颜色错乱修复**：去掉 EDID 里的深色 / YCbCr 声明，并自动应用到所有外接屏 |
 | `docs/igpu-whateverxe.md` | WhateverXe 早期调查记录（60MB 冻结、128MB 黑屏） |
 | `windows-tools/collect-hwinfo.ps1` | 在 Windows 下收集硬件信息 |
 
@@ -90,6 +92,7 @@ A complete record of running **macOS Tahoe 26.7.1 (25G241)** with OpenCore on th
 | CPU | i5-11300H (Tiger Lake-H35, model 0x8C) | ✅ spoofed as Ice Lake-U (`Cpuid1Data E5060700`) |
 | iGPU | Iris Xe `8086:9A49` | ✅ **Apple's native driver** (experimental): WhateverXe 0.8.0 + patches from this repo, see [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)<br>✅ **Metal acceleration** (stable) with [zep245/IrisXe-macos-driver](https://github.com/zep245/IrisXe-macos-driver) (i915 port), see [docs/igpu-zep245.md](docs/igpu-zep245.md) |
 | Panel | Tianma TL156MDMP01, 3200x2000, 90/60 Hz | ✅ native 3200x2000 @ 90 Hz when accelerated; 1920x1200 GOP otherwise |
+| HDMI monitor | — | ✅ with the native driver, needs an EDID override for correct colours (forces 8 bpc RGB), see [docs/hdmi-color.md](docs/hdmi-color.md) |
 | SSD | Intel 660p 1 TB | ✅ |
 | Wi-Fi / BT | Intel AX201 / 8087:0026 | ✅ AirportItlwm / IntelBluetoothFirmware; enterprise Wi-Fi (802.1X, e.g. eduroam) needs the fixed build, see [docs/wifi-8021x.md](docs/wifi-8021x.md) |
 | Audio | Realtek ALC256 (A0C8 controller in SST/DSP mode) | ✅ speakers / headphones via SimpleHDA + `alcid=38` |
@@ -119,6 +122,7 @@ BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hi
 | `docs/dvmt-insyde.md`, `scripts/set-dvmt.sh`, `scripts/bios/` | **Change the hidden DVMT setting** (60 MB → 128 MB), plus tools to unpack the Xiaomi BIOS and locate setup options |
 | `docs/igpu-whateverxe-native.md` | **Native Apple iGPU driver: how it was lit up, and install guide** (English / Chinese): black screen → keep the link → garbled image (bpc) → brightness (PWM period) |
 | `docs/wifi-8021x.md`, `patches/itlwm/` | **Enterprise Wi-Fi (802.1X) fix**: the AirportItlwm BSSID timing bug and the fixed driver build |
+| `docs/hdmi-color.md`, `scripts/edid-fix/` | **HDMI colour fix**: strip deep colour / YCbCr from the EDID, applied automatically to every external monitor |
 | `patches/whateverxe-0.8.0/`, `scripts/make_wex_config.py` | WhateverXe 0.8.0 patches, prebuilt kext, build script, config generator |
 | `docs/igpu-whateverxe.md` | Earlier WhateverXe investigation (freeze at 60 MB, black screen at 128 MB) |
 | `windows-tools/collect-hwinfo.ps1` | Hardware inventory from Windows |

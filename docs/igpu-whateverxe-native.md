@@ -19,7 +19,7 @@ RedmiBook Pro 15 2021（i5-11300H，Iris Xe `8086:9A49`，80 EU），macOS Tahoe
 | 帧缓冲 | 30-bit (ARGB2101010)；链路为固件选择的 6 bpc + 抖动 |
 | 亮度调节 | ✅ 全范围（修复后占空比最高 99.8%） |
 | 睡眠 / 合盖 / 显示器睡眠 | ⚠️ 未测试（测试期间关闭了睡眠：`pmset -a sleep 0 displaysleep 0 disablesleep 1`） |
-| HDMI | ⚠️ 未测试 |
+| HDMI | ✅ 能点亮（1920×1200 @ 60Hz 已测）；颜色错乱需 EDID 覆盖修复，见 [hdmi-color.md](hdmi-color.md) |
 | 视频播放 | ⚠️ 未测试。上游有 App Store / 屏保视频导致 GPU 挂起的报告（WhateverXe #75 #81） |
 
 官方 WhateverXe 0.8.0 在这台机器上是**黑屏**的，需要下面三组补丁。
@@ -120,7 +120,7 @@ drivers** (AppleIntelTGLGraphics / Framebuffer 16.0.0 from WhateverXe Graphics 0
 | Framebuffer | 30-bit (ARGB2101010); the link stays at the firmware's 6 bpc + dithering |
 | Brightness | ✅ full range (duty up to 99.8% after the fix) |
 | Sleep / lid / display sleep | ⚠️ not tested (sleep disabled during testing) |
-| HDMI | ⚠️ not tested |
+| HDMI | ✅ lights up (1920×1200 @ 60 Hz tested); broken colours need the EDID override, see [hdmi-color.md](hdmi-color.md) |
 | Video playback | ⚠️ not tested; upstream reports GPU hangs from App Store / screensaver video (WhateverXe #75, #81) |
 
 Stock WhateverXe 0.8.0 gives a **black screen** on this machine. It takes the three patch sets below.
