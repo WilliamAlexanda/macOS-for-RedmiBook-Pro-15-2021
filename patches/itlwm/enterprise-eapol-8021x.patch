@@ -1,0 +1,62 @@
+diff --git a/AirportItlwm/AirportItlwmSkywalkInterface.cpp b/AirportItlwm/AirportItlwmSkywalkInterface.cpp
+index d5891edd..879aba98 100644
+--- a/AirportItlwm/AirportItlwmSkywalkInterface.cpp
++++ b/AirportItlwm/AirportItlwmSkywalkInterface.cpp
+@@ -646,7 +646,9 @@ IOReturn AirportItlwmSkywalkInterface::
+ getBSSID(struct apple80211_bssid_data *bd)
+ {
+     struct ieee80211com *ic = fHalService->get80211Controller();
+-    if (ic->ic_state == IEEE80211_S_RUN) {
++    // 802.1X supplicant queries the BSSID as soon as WCL reports the link up,
++    // which can race net80211 reaching S_RUN.
++    if (ic->ic_state >= IEEE80211_S_ASSOC && ic->ic_bss != NULL) {
+         memset(bd, 0, sizeof(*bd));
+         bd->version = APPLE80211_VERSION;
+         memcpy(bd->bssid.octet, ic->ic_bss->ni_bssid, APPLE80211_ADDR_LEN);
+diff --git a/AirportItlwm/AirportItlwmV2.cpp b/AirportItlwm/AirportItlwmV2.cpp
+index ea1c5acc..97dcbbd8 100644
+--- a/AirportItlwm/AirportItlwmV2.cpp
++++ b/AirportItlwm/AirportItlwmV2.cpp
+@@ -766,7 +766,9 @@ UInt32 AirportItlwm::enqueuePacket(mbuf_t m)
+ {
+     auto ic = fHalService->get80211Controller();
+     auto ifp = &ic->ic_ac.ac_if;
+-    if (ic->ic_state == IEEE80211_S_RUN && ifp->if_snd.queue &&
++    // EAPOL frames must flow as soon as the association completes, before
++    // net80211 has fully transitioned to S_RUN (802.1X supplicant timing).
++    if (ic->ic_state >= IEEE80211_S_ASSOC && ifp->if_snd.queue &&
+         m && mbuf_type(m) != MBUF_TYPE_FREE && (mbuf_flags(m) & MBUF_PKTHDR) &&
+         ifp->if_snd.queue->lockEnqueue(m))
+         return kIOReturnOutputSuccess;
+diff --git a/AirportItlwm/AirportSTAIOCTL.cpp b/AirportItlwm/AirportSTAIOCTL.cpp
+index c87deeec..48bbe03d 100644
+--- a/AirportItlwm/AirportSTAIOCTL.cpp
++++ b/AirportItlwm/AirportSTAIOCTL.cpp
+@@ -647,7 +647,9 @@ getBSSID(OSObject *object,
+                          struct apple80211_bssid_data *bd)
+ {
+     struct ieee80211com *ic = fHalService->get80211Controller();
+-    if (ic->ic_state == IEEE80211_S_RUN) {
++    // 802.1X supplicant queries the BSSID as soon as WCL reports the link up,
++    // which can race net80211 reaching S_RUN.
++    if (ic->ic_state >= IEEE80211_S_ASSOC && ic->ic_bss != NULL) {
+         memset(bd, 0, sizeof(*bd));
+         bd->version = APPLE80211_VERSION;
+         memcpy(bd->bssid.octet, ic->ic_bss->ni_bssid, APPLE80211_ADDR_LEN);
+diff --git a/itl80211/openbsd/net80211/ieee80211_proto.c b/itl80211/openbsd/net80211/ieee80211_proto.c
+index 392366ea..70f2c46a 100644
+--- a/itl80211/openbsd/net80211/ieee80211_proto.c
++++ b/itl80211/openbsd/net80211/ieee80211_proto.c
+@@ -1706,7 +1706,11 @@ ieee80211_newstate(struct ieee80211com *ic, enum ieee80211_state nstate,
+                     " HE enabled" : "");
+ 			}
+ #if defined(AIRPORT_WCL)
+-            if (!(ic->ic_flags & IEEE80211_F_RSNON) || ni->ni_port_valid) {
++            /* 802.1X needs the link up at association so that the
++             * user-space supplicant (eapolclient) can transmit EAPOL
++             * frames over en1 before any keys are installed. */
++            if (ieee80211_is_8021x_akm((enum ieee80211_akm)ni->ni_rsnakms) ||
++                !(ic->ic_flags & IEEE80211_F_RSNON)) {
+ #elif defined(USE_APPLE_SUPPLICANT)
+             {
+ #elif (defined IO80211FAMILY_V2)

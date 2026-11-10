@@ -22,7 +22,7 @@
 | ECEnabler | 1.0.6 | 1Revenger1/ECEnabler | |
 | VoodooPS2Controller | 2.3.8 | acidanthera/VoodooPS2 | |
 | VoodooI2C, VoodooI2CHID | 2.9.1 | VoodooI2C/VoodooI2C | **需打补丁 / needs the patch below** |
-| AirportItlwm (Tahoe) | 2.4.0 | laobamac/itlwm Tahoe build (same as the EFI in JulioNectar/Hackintosh-XPS13Plus-IrisXe-Tahoe) | |
+| AirportItlwm (Tahoe) | 2.4.0 (`4240f66`) | wfx1024/itlwm `fix/enterprise-eapol` Tahoe Release (laobamac/itlwm `7204c69` + 802.1X fix, laobamac/itlwm#35) | 企业级 Wi-Fi 必需 / needed for WPA2-Enterprise, see [docs/wifi-8021x.md](../docs/wifi-8021x.md)。laobamac 正式版 `738d4c6` 只能连 PSK / the official `738d4c6` build only joins PSK networks |
 | IntelBluetoothFirmware, IntelBTPatcher | 2.5.1 | OpenIntelWireless/IntelBluetoothFirmware | |
 | BlueToolFixup | 2.7.3 | acidanthera/BrcmPatchRAM | |
 | BrightnessKeys | 1.0.4 | acidanthera/BrightnessKeys | |
