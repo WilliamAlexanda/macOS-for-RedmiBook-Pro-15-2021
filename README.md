@@ -23,7 +23,7 @@
 | 键盘 | PS/2 | ✅ VoodooPS2 |
 | 摄像头 | XiaoMi USB 2.0 Webcam（UVC） | ✅ 免驱 |
 | 指纹 | Goodix 27c6:581a | ❌ |
-| 睡眠 | — | ❌ 不建议使用 |
+| 睡眠 | — | ✅ 原生核显驱动下可用（睡眠、合盖、显示器睡眠），需补丁 04，见 [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md)；zep245 驱动下不建议使用 |
 
 BIOS：Insyde H2O `RMATG5B0P0D0D`。DVMT 出厂固定为 60MB（GMS 0xFE），BIOS 里看不到这个选项，但**可以在 macOS 里改成 128MB**，见 [docs/dvmt-insyde.md](docs/dvmt-insyde.md)。i915 移植驱动的显存从系统内存分配，不改也能用；苹果原版驱动（WhateverXe）则必须改。
 
@@ -101,7 +101,7 @@ A complete record of running **macOS Tahoe 26.7.1 (25G241)** with OpenCore on th
 | Keyboard | PS/2 | ✅ VoodooPS2 |
 | Camera | XiaoMi USB 2.0 Webcam (UVC) | ✅ |
 | Fingerprint | Goodix 27c6:581a | ❌ |
-| Sleep | — | ❌ not recommended |
+| Sleep | — | ✅ works with the native iGPU driver (sleep, lid, display sleep) with patch 04, see [docs/igpu-whateverxe-native.md](docs/igpu-whateverxe-native.md); not recommended with the zep245 driver |
 
 BIOS: Insyde H2O `RMATG5B0P0D0D`. DVMT ships fixed at 60 MB (GMS 0xFE) and is hidden in setup, but it **can be set to 128 MB from macOS**: see [docs/dvmt-insyde.md](docs/dvmt-insyde.md). The i915 port allocates GPU memory from system RAM and works without it; Apple's driver (WhateverXe) needs it.
 

@@ -25,7 +25,7 @@ add.insert(lilu + 2, dict(base, BundlePath="WhateverXe.kext",
 c["DeviceProperties"]["Add"].pop("PciRoot(0x0)/Pci(0x2,0x0)", None)
 c["UEFI"]["Output"]["Resolution"] = "Max"  # the firmware must train the panel at native 3200x2000; the driver keeps that link
 ours = "keepsyms=1 debug=0x100 -v -vi2c-force-polling alcid=38 alcverbs=1"
-wex = "-allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training"
+wex = "-allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training -wex-edp-no-extcap"
 c["NVRAM"]["Add"]["7C436110-AB2A-4BBB-A880-FE41995C9F82"]["boot-args"] = f"{ours} {wex}"
 out = Path(sys.argv[2])
 plistlib.dump(c, open(out, "wb"))

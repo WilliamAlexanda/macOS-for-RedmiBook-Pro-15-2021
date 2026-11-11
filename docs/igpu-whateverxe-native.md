@@ -16,13 +16,13 @@ RedmiBook Pro 15 2021（i5-11300H，Iris Xe `8086:9A49`，80 EU），macOS Tahoe
 |---|---|
 | 内屏 3200×2000，HiDPI 1600×1000 @ **90Hz** | ✅ 画面正常 |
 | Metal | ✅ Metal 2，VRAM 1536 MB |
-| 帧缓冲 | 30-bit (ARGB2101010)；链路为固件选择的 6 bpc + 抖动 |
+| 帧缓冲 | 30-bit (ARGB2101010)；开机时链路为固件选择的 6 bpc + 抖动；睡眠唤醒后为驱动自己训练的 8 bpc |
 | 亮度调节 | ✅ 全范围（修复后占空比最高 99.8%） |
-| 睡眠 / 合盖 / 显示器睡眠 | ⚠️ 未测试（测试期间关闭了睡眠：`pmset -a sleep 0 displaysleep 0 disablesleep 1`） |
+| 睡眠 / 合盖 / 显示器睡眠 | ✅ 可用（2026-11-11，需补丁 04 和 `-wex-edp-no-extcap`）；唤醒需按电源键 |
 | HDMI | ✅ 能点亮（1920×1200 @ 60Hz 已测）；颜色错乱需 EDID 覆盖修复，见 [hdmi-color.md](hdmi-color.md) |
 | 视频播放 | ⚠️ 未测试。上游有 App Store / 屏保视频导致 GPU 挂起的报告（WhateverXe #75 #81） |
 
-官方 WhateverXe 0.8.0 在这台机器上是**黑屏**的，需要下面三组补丁。
+官方 WhateverXe 0.8.0 在这台机器上是**黑屏**的，需要下面四组补丁。
 
 ### 问题是怎么一步步解决的
 
@@ -47,7 +47,7 @@ FB0 没有启用，WindowServer 自然找不到可用的显示平面。完整对
   这台机器上的判定记录：固件链路与驱动想要的时序完全相同，只有位深不同（reasons = `0x800`），所以链路被保留。
 - `-wex-edp-fix-training` + `-wex-ddi-conflict-select-*`（@qqaoshi888）：在每次内屏 LightUpEDP 之前做面板电源复位和 DDI/AUX 电源域修复。
   在这台机器上它装好了，但没有触发（没有 `TGLPanelCycle` 记录），因为 keep 让驱动不再走完整的点亮流程。
-  保留它是为将来的睡眠唤醒准备，目前作用未经验证。
+  睡眠唤醒时驱动会走完整点亮流程，这时它会触发（有 `TGLPanelCycle` 记录）；去掉它是否仍能唤醒尚未单独测试。
 
 两者都能干净地打到 0.8.0 源码上。补丁用到的 10 个苹果驱动函数，地址和入口字节都在 Tahoe 版
 `AppleIntelTGLGraphicsFramebuffer`（WhateverXe Graphics 0.4.1）上核对过，全部吻合。
@@ -70,6 +70,39 @@ keep 生效后，屏幕第一次被原生驱动点亮，但画面是花的。读
 而驱动按它自己的周期 17777 来计算占空比，所以滑块拉满时实际占空比只有 17741 / 96000 ≈ 18.5%。
 修复方法：驱动写 `0xC8258`（占空比）时，按"硬件周期 ÷ 驱动周期"等比例放大。修复后拉满时为 95805 / 96000 = 99.8%。
 
+**5. 关屏后再也点不亮：驱动把 DPCD 0x00E 的最高位当成了等待时间（本仓库补丁 04 修复）。**
+keep 只解决了开机。显示器睡眠、合盖、系统睡眠之后，驱动必须自己做完整的 modeset 并重新训练链路，
+结果又是 `Phase 2 of link training failed`，屏幕一直黑到重启。记录 AUX 通道上的读写后看到：
+
+```
+W 103  0a 0a 0a 0a          ← 写入驱动电平
+R 202  33 33 80  (+132 ms)   ← 时钟恢复通过
+W 102  07                    ← 切到 TPS4
+R 202  00 00 80  (+131 ms)   ← 锁丢了，重试 5 次后放弃
+```
+
+每次写完都要等约 130 ms 才读状态，而 DisplayPort 规定的间隔是 100 µs / 400 µs。
+这块屏（天马 TL156MDMP01）的 DPCD `0x00E`（TRAINING_AUX_RD_INTERVAL）= `0x80`：
+bit 7 表示"有扩展能力字段"，低 7 位才是间隔（这里是 0，即标准间隔）。
+苹果驱动把整个字节当成间隔，等的时间太长，屏在这期间已经失锁。
+
+修复方法：在内屏（DDI A）上读 DPCD `0x00E` 时把 bit 7 清掉（`-wex-edp-no-extcap`）。
+之后驱动约 0.6 ms 就读状态，用它自己的参数（HBR2 5.4 Gbps ×4、TPS4）一次训练成功：
+
+```
+R 202  33 33 80  (+0.6 ms)
+R 202  77 77 81  (+0.9 ms)   ← 通道均衡、符号锁定、对齐全部通过
+```
+
+同一个补丁还做了一件事：驱动自己重新点屏之后，链路已经不是固件那条 6 bpc 链路了，
+所以补丁 03 的"强制固件位深"在这之后自动停用。
+
+排查过程中先后试过隐藏 ASSR、TPS4 改 TPS3、沿用固件的 PLL 和速率（4.32 Gbps）、eDP 1.4 速率表选择，
+这些都不是原因，最终补丁里一个也不需要。
+
+已验证（2026-11-11）：显示器睡眠、系统睡眠（`pmset sleepnow`、苹果菜单"睡眠"）、合盖再打开，屏幕都能正常恢复。
+开机仍然走 keep（沿用固件链路）；只靠补丁 04、不用 keep 能否直接开机点亮，尚未测试。
+
 ### 安装步骤
 
 > ⚠️ 实验性质。动手前备份 EFI，并准备好能启动的 U 盘。随时可以换回 zep245 配置（[igpu-zep245.md](igpu-zep245.md)）。
@@ -86,7 +119,7 @@ keep 生效后，屏幕第一次被原生驱动点亮，但画面是花的。读
    也可以直接用仓库里的 `EFI/OC/config-whateverxe.plist`。然后填入你自己的序列号。要点：
    - WhateverGreen 关闭；
    - `UEFI > Output > Resolution = Max`，必须让固件把内屏练在原生 3200×2000，keep 才能沿用这条链路；
-   - boot-args 加上 `-allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training`。
+   - boot-args 加上 `-allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training -wex-edp-no-extcap`。
 6. 重启。验证方法：
    - `system_profiler SPDisplaysDataType` 应显示 `Metal 2` 和 `3200 x 2000`；
    - `ioreg -l -w0 | grep -E '"TGLEDPKept"|"TGLBacklightRescale"'` 应显示 `TGLEDPKept` ≥ 1，并且有 `TGLBacklightRescale` 记录。
@@ -100,7 +133,8 @@ keep 生效后，屏幕第一次被原生驱动点亮，但画面是花的。读
 | `01-edp-fix-training-ddi-conflict.patch` | @qqaoshi888，WhateverXe #43（`fix_code(0.8.0).zip`） |
 | `02-tgl-edp-keep-softsleep.patch` | @KenzoPortela，WhateverXe #37（`wex-tgl-edp-keep-softsleep-v2.patch`） |
 | `03-redmibook-bpc-backlight.patch` | 本仓库：位深一致性 + 背光周期缩放 |
-| `all-in-one.patch` | 以上三者合并 |
+| `04-edp-retrain-extcap.patch` | 本仓库：屏蔽 DPCD 0x00E bit 7，让驱动自己的链路训练通过（睡眠唤醒） |
+| `all-in-one.patch` | 以上四者合并 |
 
 WhateverXe 采用 BSD-3-Clause 许可（见 `LICENSE-WhateverXe.txt`）。编译时使用 MacKernelSDK `05094e5` 和 Lilu 1.7.2，与上游 CI 相同。
 
@@ -117,13 +151,13 @@ drivers** (AppleIntelTGLGraphics / Framebuffer 16.0.0 from WhateverXe Graphics 0
 |---|---|
 | Internal panel 3200×2000, HiDPI 1600×1000 @ **90 Hz** | ✅ correct image |
 | Metal | ✅ Metal 2, VRAM 1536 MB |
-| Framebuffer | 30-bit (ARGB2101010); the link stays at the firmware's 6 bpc + dithering |
+| Framebuffer | 30-bit (ARGB2101010); at boot the link is the firmware's 6 bpc + dithering; after a wake it is the donor's own 8 bpc link |
 | Brightness | ✅ full range (duty up to 99.8% after the fix) |
-| Sleep / lid / display sleep | ⚠️ not tested (sleep disabled during testing) |
+| Sleep / lid / display sleep | ✅ working (2026-11-11, needs patch 04 and `-wex-edp-no-extcap`); wake with the power button |
 | HDMI | ✅ lights up (1920×1200 @ 60 Hz tested); broken colours need the EDID override, see [hdmi-color.md](hdmi-color.md) |
 | Video playback | ⚠️ not tested; upstream reports GPU hangs from App Store / screensaver video (WhateverXe #75, #81) |
 
-Stock WhateverXe 0.8.0 gives a **black screen** on this machine. It takes the three patch sets below.
+Stock WhateverXe 0.8.0 gives a **black screen** on this machine. It takes the four patch sets below.
 
 ### How it was solved
 
@@ -141,7 +175,7 @@ equalization. See [logs/whateverxe-0.8.0-stock-vs-patched.txt](logs/whateverxe-0
   differs (reasons `0x800`), so the link is kept.
 - `-wex-edp-fix-training` + `-wex-ddi-conflict-select-*` (@qqaoshi888): panel power cycle and DDI/AUX power-domain repair
   before each internal LightUpEDP. It is installed here but never fired (no `TGLPanelCycle` record), because with keep the
-  donor no longer runs a full light-up. It stays in for future wake work; its effect is unverified.
+  donor no longer runs a full light-up. It does fire on wake from sleep, when the donor runs a full light-up (`TGLPanelCycle` record present); whether wake works without it has not been tested separately.
 
 Both apply cleanly on 0.8.0. All 10 donor entry points they hook match by offset and prologue on the Tahoe
 `AppleIntelTGLGraphicsFramebuffer` shipped in WhateverXe Graphics 0.4.1.
@@ -164,6 +198,41 @@ The hardware keeps the firmware period (`0xC8254 = 96000`), while the donor comp
 Full brightness was 17741 / 96000 ≈ 18.5%. Fix: scale every `0xC8258` duty write by `hw period / donor period`.
 Full brightness is now 95805 / 96000 = 99.8%.
 
+**5. Panel never comes back after display sleep: the donor reads DPCD 0x00E bit 7 as a delay (patch 04).**
+Keep only covers boot. After display sleep, lid close or system sleep the donor has to run a complete mode set and retrain
+the link itself, and that again ended in `Phase 2 of link training failed` with a black panel until reboot. The AUX trace
+shows why:
+
+```
+W 103  0a 0a 0a 0a          <- drive settings
+R 202  33 33 80  (+132 ms)   <- clock recovery done
+W 102  07                    <- switch to TPS4
+R 202  00 00 80  (+131 ms)   <- lock lost; gives up after 5 retries
+```
+
+Every status read comes about 130 ms after the write; DisplayPort asks for 100 µs / 400 µs. This panel (Tianma
+TL156MDMP01) reports DPCD `0x00E` (TRAINING_AUX_RD_INTERVAL) = `0x80`: bit 7 means "extended receiver capability field
+present" and only the low 7 bits are the interval (0 here, i.e. the standard one). The donor uses the whole byte as the
+interval, waits far too long, and the sink drops lock in the meantime.
+
+Fix: clear bit 7 of DPCD `0x00E` on reads from the internal DDI A sink (`-wex-edp-no-extcap`). The donor then polls after
+about 0.6 ms and trains on the first attempt with its own parameters (HBR2 5.4 Gbps x4, TPS4):
+
+```
+R 202  33 33 80  (+0.6 ms)
+R 202  77 77 81  (+0.9 ms)   <- channel EQ, symbol lock and alignment all done
+```
+
+The same patch also stops patch 03's "force the firmware depth" once the donor has lit the panel itself, because the
+link is then no longer the firmware's 6 bpc link.
+
+Hiding ASSR, TPS3 instead of TPS4, reusing the firmware PLL and rate (4.32 Gbps) and eDP 1.4 rate-table selection were all
+tried on the way; none of them was the cause and none is in the final patch.
+
+Verified (2026-11-11): display sleep, system sleep (`pmset sleepnow`, Apple menu Sleep) and lid close/open all bring the
+panel back. Boot still goes through keep (the firmware link); whether patch 04 alone can light the panel at boot without
+keep has not been tested.
+
 ### Install
 
 > ⚠️ Experimental. Back up your EFI and keep a bootable USB stick. You can always go back to the zep245 config
@@ -182,7 +251,7 @@ Full brightness is now 95805 / 96000 = 99.8%.
 5. Use `EFI/OC/config-whateverxe.plist` (or regenerate it with `scripts/make_wex_config.py`) and add your own serials. Key points:
    - WhateverGreen off;
    - `UEFI > Output > Resolution = Max`, so the firmware trains the panel at native 3200×2000 and keep can reuse that link;
-   - boot-args `-allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training`.
+   - boot-args `-allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training -wex-edp-no-extcap`.
 6. Reboot and check:
    - `system_profiler SPDisplaysDataType` shows `Metal 2` and `3200 x 2000`;
    - `ioreg -l -w0 | grep -E '"TGLEDPKept"|"TGLBacklightRescale"'` shows `TGLEDPKept` ≥ 1 and a `TGLBacklightRescale` record.
@@ -196,6 +265,7 @@ On top of WhateverXe `0.8.0` (`db438fd`), in order:
 | `01-edp-fix-training-ddi-conflict.patch` | @qqaoshi888, WhateverXe #43 |
 | `02-tgl-edp-keep-softsleep.patch` | @KenzoPortela, WhateverXe #37 (v2) |
 | `03-redmibook-bpc-backlight.patch` | this repo: depth consistency + backlight period scaling |
-| `all-in-one.patch` | all three combined |
+| `04-edp-retrain-extcap.patch` | this repo: mask DPCD 0x00E bit 7 so the donor's own link training passes (wake from sleep) |
+| `all-in-one.patch` | all four combined |
 
 WhateverXe is BSD-3-Clause (`LICENSE-WhateverXe.txt`). Built with MacKernelSDK `05094e5` and Lilu 1.7.2, as in upstream CI.

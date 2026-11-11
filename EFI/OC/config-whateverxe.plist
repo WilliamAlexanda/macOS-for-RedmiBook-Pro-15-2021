@@ -1148,7 +1148,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>keepsyms=1 debug=0x100 -v -vi2c-force-polling alcid=38 alcverbs=1 -allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training</string>
+				<string>keepsyms=1 debug=0x100 -v -vi2c-force-polling alcid=38 alcverbs=1 -allow3d -disablegfxfirmware -wex-tgl-edp-keep -wex-edp-fix-training -wex-edp-no-extcap</string>
 				<key>csr-active-config</key>
 				<data>
 				EwoAAA==
